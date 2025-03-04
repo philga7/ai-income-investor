@@ -1,6 +1,7 @@
 import React from 'react';
 import { LineChart, Wallet, TrendingUp, Calendar, Bell, Settings } from 'lucide-react';
 import { createChart, ColorType } from 'lightweight-charts';
+import Portfolio from './pages/Portfolio';
 
 function App() {
   const [activeTab, setActiveTab] = React.useState('dashboard');
@@ -92,56 +93,63 @@ function App() {
 
       {/* Main Content */}
       <div className="ml-64 p-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
-            <h3 className="text-gray-400 text-sm mb-2">Portfolio Value</h3>
-            <p className="text-2xl font-bold text-white">$124,532.89</p>
-            <span className="text-green-400 text-sm">+2.4% today</span>
-          </div>
-          
-          <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
-            <h3 className="text-gray-400 text-sm mb-2">Annual Dividend Income</h3>
-            <p className="text-2xl font-bold text-white">$3,241.67</p>
-            <span className="text-blue-400 text-sm">Next payment in 12 days</span>
-          </div>
-          
-          <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
-            <h3 className="text-gray-400 text-sm mb-2">Dividend Yield</h3>
-            <p className="text-2xl font-bold text-white">4.2%</p>
-            <span className="text-gray-400 text-sm">Portfolio average</span>
-          </div>
-        </div>
-
-        {/* Chart Section */}
-        <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 mb-8">
-          <h2 className="text-xl font-bold text-white mb-4">Portfolio Performance</h2>
-          <div ref={chartContainerRef} className="w-full h-[400px]" />
-        </div>
-
-        {/* AI Insights */}
-        <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
-          <h2 className="text-xl font-bold text-white mb-4">AI Insights</h2>
-          <div className="space-y-4">
-            <div className="flex items-start space-x-4 p-4 bg-blue-900/30 rounded-lg border border-blue-800">
-              <div className="flex-shrink-0">
-                <Bell className="h-6 w-6 text-blue-400" />
+        <div className="p-8">
+          {activeTab === 'dashboard' && (
+            <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
+                  <h3 className="text-gray-400 text-sm mb-2">Portfolio Value</h3>
+                  <p className="text-2xl font-bold text-white">$124,532.89</p>
+                  <span className="text-green-400 text-sm">+2.4% today</span>
+                </div>
+                
+                <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
+                  <h3 className="text-gray-400 text-sm mb-2">Annual Dividend Income</h3>
+                  <p className="text-2xl font-bold text-white">$3,241.67</p>
+                  <span className="text-blue-400 text-sm">Next payment in 12 days</span>
+                </div>
+                
+                <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
+                  <h3 className="text-gray-400 text-sm mb-2">Dividend Yield</h3>
+                  <p className="text-2xl font-bold text-white">4.2%</p>
+                  <span className="text-gray-400 text-sm">Portfolio average</span>
+                </div>
               </div>
-              <div>
-                <h4 className="font-semibold text-white">Special Dividend Alert</h4>
-                <p className="text-gray-300">Microsoft (MSFT) announced a special dividend of $3.00 per share. Ex-dividend date: March 15, 2024</p>
+
+              {/* Chart Section */}
+              <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700 mb-8">
+                <h2 className="text-xl font-bold text-white mb-4">Portfolio Performance</h2>
+                <div ref={chartContainerRef} className="w-full h-[400px]" />
+              </div>
+
+              {/* AI Insights */}
+              <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
+                <h2 className="text-xl font-bold text-white mb-4">AI Insights</h2>
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-4 p-4 bg-blue-900/30 rounded-lg border border-blue-800">
+                    <div className="flex-shrink-0">
+                      <Bell className="h-6 w-6 text-blue-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">Special Dividend Alert</h4>
+                      <p className="text-gray-300">Microsoft (MSFT) announced a special dividend of $3.00 per share. Ex-dividend date: March 15, 2024</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-4 p-4 bg-green-900/30 rounded-lg border border-green-800">
+                    <div className="flex-shrink-0">
+                      <TrendingUp className="h-6 w-6 text-green-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-white">Buy Signal</h4>
+                      <p className="text-gray-300">Johnson & Johnson (JNJ) showing strong buy signals based on technical indicators and upcoming dividend date.</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-            
-            <div className="flex items-start space-x-4 p-4 bg-green-900/30 rounded-lg border border-green-800">
-              <div className="flex-shrink-0">
-                <TrendingUp className="h-6 w-6 text-green-400" />
-              </div>
-              <div>
-                <h4 className="font-semibold text-white">Buy Signal</h4>
-                <p className="text-gray-300">Johnson & Johnson (JNJ) showing strong buy signals based on technical indicators and upcoming dividend date.</p>
-              </div>
-            </div>
-          </div>
+          )}
+          {activeTab === 'portfolio' && <Portfolio />}
         </div>
       </div>
     </div>
