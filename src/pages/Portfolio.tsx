@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import mockPortfolioData from '../mockPortfolioData';
 
 const Portfolio: React.FC = () => {
+  const [selectedHolding, setSelectedHolding] = useState(null);
+
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold text-white mb-6">Portfolio</h1>
