@@ -66,50 +66,52 @@ const Portfolio: React.FC = () => {
       {/* Portfolio Holdings */}
       <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
         <h2 className="text-xl font-bold text-white mb-4">Holdings</h2>
-        <table className="w-full text-left text-gray-300">
-          <thead>
-            <tr>
-              <th className="py-2 px-4">Ticker</th>
-              <th className="py-2 px-4">Shares</th>
-              <th className="py-2 px-4">Price</th>
-              <th className="py-2 px-4">Value</th>
-              <th className="py-2 px-4">Dividend Yield</th>
-              <th className="py-2 px-4">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {mockPortfolioData.holdings.map((holding) => (
-              <tr
-                key={holding.ticker}
-                className="border-t border-gray-700 cursor-pointer hover:bg-gray-700"
-                onClick={() => setSelectedHolding(holding)}
-              >
-                <td className="py-2 px-4">{holding.ticker}</td>
-                <td className="py-2 px-4">{holding.shares}</td>
-                <td className="py-2 px-4">
-                  ${holding.price.toFixed(2).toLocaleString()}
-                </td>
-                <td className="py-2 px-4">
-                  ${(holding.shares * holding.price).toLocaleString()}
-                </td>
-                <td className="py-2 px-4">
-                  {holding.dividendYield.toFixed(2)}%
-                </td>
-                <td className="py-2 px-4">
-                  <button className="bg-green-600 text-white px-2 py-1 rounded-lg hover:bg-green-700 mr-2">
-                    Buy
-                  </button>
-                  <button className="bg-blue-600 text-white px-2 py-1 rounded-lg hover:bg-blue-700 mr-2">
-                    Sell
-                  </button>
-                  <button className="bg-red-600 text-white px-2 py-1 rounded-lg hover:bg-red-700">
-                    Remove
-                  </button>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-gray-300">
+            <thead>
+              <tr>
+                <th className="py-2 px-4">Ticker</th>
+                <th className="py-2 px-4">Shares</th>
+                <th className="py-2 px-4">Price</th>
+                <th className="py-2 px-4">Value</th>
+                <th className="py-2 px-4">Dividend Yield</th>
+                <th className="py-2 px-4">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {mockPortfolioData.holdings.map((holding) => (
+                <tr
+                  key={holding.ticker}
+                  className="border-t border-gray-700 cursor-pointer hover:bg-gray-700"
+                  onClick={() => setSelectedHolding(holding)}
+                >
+                  <td className="py-2 px-4">{holding.ticker}</td>
+                  <td className="py-2 px-4">{holding.shares}</td>
+                  <td className="py-2 px-4">
+                    ${holding.price.toFixed(2).toLocaleString()}
+                  </td>
+                  <td className="py-2 px-4">
+                    ${(holding.shares * holding.price).toLocaleString()}
+                  </td>
+                  <td className="py-2 px-4">
+                    {holding.dividendYield.toFixed(2)}%
+                  </td>
+                  <td className="py-2 px-4">
+                    <button className="bg-green-600 text-white px-2 py-1 rounded-lg hover:bg-green-700 mr-2">
+                      Buy
+                    </button>
+                    <button className="bg-blue-600 text-white px-2 py-1 rounded-lg hover:bg-blue-700 mr-2">
+                      Sell
+                    </button>
+                    <button className="bg-red-600 text-white px-2 py-1 rounded-lg hover:bg-red-700">
+                      Remove
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         {selectedHolding && (
           <div className="mt-6 bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
             <h3 className="text-xl font-bold text-white mb-4">
