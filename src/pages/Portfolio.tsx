@@ -6,6 +6,23 @@ const Portfolio: React.FC = () => {
     <div className="p-8">
       <h1 className="text-2xl font-bold text-white mb-6">Portfolio</h1>
 
+      {/* Search and Actions */}
+      <div className="flex justify-between items-center mb-6">
+        <input
+          type="text"
+          placeholder="Search stocks..."
+          className="bg-gray-800 text-gray-300 px-4 py-2 rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <div className="flex space-x-4">
+          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+            Filter
+          </button>
+          <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+            Add Stock
+          </button>
+        </div>
+      </div>
+
       {/* Portfolio Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
@@ -75,6 +92,22 @@ const Portfolio: React.FC = () => {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Technical Analysis */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+        <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
+          <h2 className="text-xl font-bold text-white mb-4">Next Dividend</h2>
+          <p className="text-gray-300">
+            Your next dividend payment is from <span className="text-white font-semibold">Microsoft (MSFT)</span> on <span className="text-white font-semibold">March 15, 2024</span>.
+          </p>
+        </div>
+        <div className="bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-700">
+          <h2 className="text-xl font-bold text-white mb-4">Technical Analysis</h2>
+          <p className="text-gray-300">
+            Johnson & Johnson (JNJ) is showing strong buy signals based on RSI and MACD indicators.
+          </p>
+        </div>
       </div>
     </div>
   );
