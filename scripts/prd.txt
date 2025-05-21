@@ -1,0 +1,506 @@
+# AI Income Investor - Product Requirements Document
+
+## Introduction
+
+AI Income Investor is a sophisticated web application designed to help dividend investors manage their portfolios and make data-driven investment decisions. This PRD outlines the functional and technical requirements for developing the application, which will leverage AI capabilities to analyze securities, recommend buy/sell actions, and provide insights into dividend reliability. The application will help users optimize their dividend income through intelligent portfolio management and timely investment recommendations.
+
+## Product overview
+
+AI Income Investor serves as a comprehensive tool for dividend-focused investors to track, analyze, and optimize their investment portfolios. The application combines traditional investment metrics with AI-powered analysis to provide actionable insights on dividend securities. Users can manage multiple portfolios, track dividend payments, analyze security performance against technical indicators, and receive AI-generated recommendations for portfolio adjustments. The platform will be built using modern web technologies with a responsive design, ensuring accessibility across desktop and mobile devices.
+
+## Goals and objectives
+
+- Create a user-friendly platform for dividend investors to manage their portfolios
+    
+- Leverage AI to provide intelligent investment recommendations based on technical analysis
+    
+- Enable users to track and forecast dividend income across multiple portfolios
+    
+- Provide technical analysis tools including SMA and stochastics indicators to inform buy/sell decisions
+    
+- Deliver a responsive, modern UI that works across all device types
+    
+- Implement secure data storage and API integration capabilities
+    
+- Establish a maintainable codebase following industry best practices
+    
+
+## Target audience
+
+The primary users of AI Income Investor are:
+
+- Dividend-focused retail investors
+    
+- Income-oriented portfolio managers
+    
+- Retirement planners focused on generating passive income
+    
+- Individual investors looking to optimize their dividend portfolios
+    
+- Technical analysts who incorporate dividend strategies into their investment approach
+    
+
+These users typically value steady income, portfolio optimization, and data-driven investment decisions. They have varying levels of technical expertise but share an interest in maximizing dividend returns while managing risk.
+
+## Features and requirements
+
+## Portfolio management
+
+1. **Portfolio creation and customization**
+    
+    - Users can create multiple investment portfolios
+        
+    - Each portfolio has an editable name
+        
+    - System tracks total number of securities per portfolio
+        
+    - System calculates total market value of each portfolio
+        
+    - System displays overall dividend percentage for each portfolio
+        
+    - System shows current dividends paid and estimated projected dividends
+        
+    - System highlights upcoming ex-dividend dates
+        
+2. **Security management**
+    
+    - Add, edit, or remove securities from portfolios
+        
+    - For each security, track:
+        
+        - Corporate name
+            
+        - Ticker symbol
+            
+        - Shares held
+            
+        - Cost basis
+            
+        - Current market value
+            
+3. **Security detail view**
+    
+    - For dividend-paying securities:
+        
+        - Display market value
+            
+        - Show current dividend percentage and amount per payment period
+            
+        - Calculate projected dividends per share for the next year
+            
+        - Provide calculator for projected dividends based on share input
+            
+        - Show evaluation field with buy/sell status based on SMA-200, stochastics, and news
+            
+    - For non-dividend securities:
+        
+        - Display market value and other non-dividend metrics
+            
+        - Omit dividend-specific fields
+            
+
+## AI and analysis features
+
+1. **Portfolio analysis**
+    
+    - AI-powered analysis of current portfolio securities
+        
+    - Buy/sell recommendations based on technical indicators
+        
+    - Dividend reliability assessment
+        
+2. **Security evaluation**
+    
+    - Recommendations for portfolio allocation
+        
+    - Justification for dividend reliability
+        
+    - Research links with 6-month pricing charts
+        
+    - Technical indicator overlays (SMA-50, SMA-200, stochastics)
+        
+3. **Investment logic implementation**
+    
+    - Compare stock price to 200-day SMA to determine buy/sell ranges
+        
+    - Use stochastics indicators for refined buy/sell signals
+        
+    - Apply position sizing rules:
+        
+        - No additions to positions ≥5% of total portfolio value
+            
+        - New positions start with ≤⅓ of 5% of portfolio value
+            
+
+## Dashboard and reporting
+
+1. **Main dashboard**
+    
+    - Display aggregate value of all portfolios
+        
+    - Show dividend percentage across all portfolios
+        
+    - Track cash received in current year
+        
+    - Project cash for the year
+        
+    - List latest ex-dividend dates for portfolio securities
+        
+    - Show latest dividend-impacting news
+        
+    - Highlight next recommended dividend buys
+        
+2. **Settings and configuration**
+    
+    - Manage API tokens for Perplexity, OpenAI, and other integrations
+        
+    - Configure data storage preferences
+        
+    - Set user preferences for the application
+        
+
+## User stories and acceptance criteria
+
+## Authentication and user management
+
+**ST-101: User account creation**
+
+- As a new user, I want to create an account so that I can access the application
+    
+- Acceptance criteria:
+    
+    - User can enter email and password to register
+        
+    - System validates email format and password strength
+        
+    - User receives confirmation email
+        
+    - User can log in after account creation
+        
+
+**ST-102: User authentication**
+
+- As a registered user, I want to log in to access my portfolios
+    
+- Acceptance criteria:
+    
+    - User can enter credentials and access their account
+        
+    - System provides error messages for invalid credentials
+        
+    - User can request password reset if forgotten
+        
+    - System provides secure session management
+        
+
+## Portfolio management
+
+**ST-201: Portfolio creation**
+
+- As an investor, I want to create a new portfolio so I can track a specific set of investments
+    
+- Acceptance criteria:
+    
+    - User can create a portfolio with a custom name
+        
+    - System saves the portfolio to the database
+        
+    - New portfolio appears in the user's portfolio list
+        
+    - Portfolio initially shows zero securities and value
+        
+
+**ST-202: Adding securities to portfolio**
+
+- As an investor, I want to add securities to my portfolio so I can track their performance
+    
+- Acceptance criteria:
+    
+    - User can search for securities by ticker or name
+        
+    - User can enter shares held and cost basis
+        
+    - System adds security to the portfolio
+        
+    - System updates portfolio totals and metrics
+        
+
+**ST-203: Editing portfolio securities**
+
+- As an investor, I want to edit my holdings so I can keep my portfolio up to date
+    
+- Acceptance criteria:
+    
+    - User can modify shares held and cost basis
+        
+    - User can remove securities from portfolio
+        
+    - System updates portfolio calculations after changes
+        
+    - Changes persist after user logs out and back in
+        
+
+**ST-204: Viewing portfolio details**
+
+- As an investor, I want to view detailed information about my portfolio
+    
+- Acceptance criteria:
+    
+    - User can see total number of securities
+        
+    - User can view total market value
+        
+    - User can see overall dividend percentage
+        
+    - User can view current and projected dividends
+        
+    - User can see upcoming ex-dividend dates
+        
+
+## Security analysis
+
+**ST-301: Security detail view**
+
+- As an investor, I want to view detailed information about a security in my portfolio
+    
+- Acceptance criteria:
+    
+    - User can select a security to view details
+        
+    - System displays market value, dividend information for dividend payers
+        
+    - System shows technical indicators and buy/sell status
+        
+    - User can calculate projected dividends based on share count
+        
+
+**ST-302: Technical analysis**
+
+- As an investor, I want to see technical indicators for my securities
+    
+- Acceptance criteria:
+    
+    - System displays 6-month price chart with SMA-50 and SMA-200 overlays
+        
+    - System shows stochastics indicators
+        
+    - System indicates whether security is in buy or sell range
+        
+    - Chart is interactive and responsive
+        
+
+## AI features
+
+**ST-401: AI portfolio analysis**
+
+- As an investor, I want AI to analyze my portfolio and provide recommendations
+    
+- Acceptance criteria:
+    
+    - System uses AI to evaluate current holdings
+        
+    - AI provides buy/sell recommendations based on technical indicators
+        
+    - Recommendations include justification
+        
+    - Analysis completes within reasonable time (< 30 seconds)
+        
+
+**ST-402: Dividend security evaluation**
+
+- As an investor, I want AI to evaluate potential dividend-paying securities
+    
+- Acceptance criteria:
+    
+    - User can request evaluation of specific securities
+        
+    - AI provides allocation recommendations
+        
+    - AI justifies dividend reliability assessment
+        
+    - System provides research links and technical charts
+        
+
+**ST-403: API token management**
+
+- As a user, I want to manage my AI API tokens
+    
+- Acceptance criteria:
+    
+    - User can enter and save API tokens for Perplexity or OpenAI
+        
+    - System securely stores tokens
+        
+    - System uses tokens for AI functionality
+        
+    - User can update or remove tokens
+        
+
+## Dashboard
+
+**ST-501: Main dashboard view**
+
+- As an investor, I want a dashboard that gives me an overview of all my portfolios
+    
+- Acceptance criteria:
+    
+    - Dashboard shows aggregate value of all portfolios
+        
+    - Dashboard displays overall dividend percentage
+        
+    - Dashboard shows current year cash received and projected cash
+        
+    - Dashboard highlights ex-dividend dates and dividend news
+        
+    - Dashboard recommends next dividend buys
+        
+
+**ST-502: Dividend calendar**
+
+- As an investor, I want to see upcoming dividend dates
+    
+- Acceptance criteria:
+    
+    - System displays calendar of upcoming ex-dividend dates
+        
+    - Calendar is filterable by portfolio
+        
+    - User can click on dates to see affected securities
+        
+    - Calendar updates automatically with portfolio changes
+        
+
+## Database modeling
+
+**ST-601: Database schema implementation**
+
+- As a developer, I need a properly structured database to store user and portfolio data
+    
+- Acceptance criteria:
+    
+    - Database schema includes tables for users, portfolios, securities, and transactions
+        
+    - Schema includes proper relationships between tables
+        
+    - Database supports efficient queries for portfolio calculations
+        
+    - Schema includes indexes for performance optimization
+        
+
+**ST-602: Data persistence**
+
+- As a user, I want my data to be saved and retrievable
+    
+- Acceptance criteria:
+    
+    - All user data is stored in Supabase
+        
+    - Data changes are saved in real-time
+        
+    - Data is properly associated with user accounts
+        
+    - System handles concurrent data access appropriately
+        
+
+## Technical requirements / stack
+
+## Frontend
+
+- **Framework:** Next.js with TypeScript
+    
+- **Routing:** App Router
+    
+- **Components:** React Server Components as needed
+    
+- **Styling:** TailwindCSS with Shadcn UI (dark theme)
+    
+- **Icons:** Lucide
+    
+- **Forms:** React Hook Form with Zod validation
+    
+
+## Backend and data
+
+- **Database:** Supabase (Vercel hobby account)
+    
+- **API Integration:** Perplexity (Sonar) or OpenAI
+    
+- **AI Context:** Model Context Protocol
+    
+
+## Development tools
+
+- **Source Control:** GitHub
+    
+- **Repository:** [https://github.com/philga7/ai-income-investor](https://github.com/philga7/ai-income-investor)
+    
+- **Code Quality:** ESLint, Prettier
+    
+- **Error Tracking:** Highlight
+    
+- **CI/CD:** GitHub Actions, Vercel deployment
+    
+- **Testing:** Jest for unit tests, Playwright for e2e tests
+    
+
+## Development practices
+
+- **Project Structure:** Feature-based organization following modern Next.js guides
+    
+- **Git Workflow:** Feature branching with descriptive commits
+    
+- **Commit Style:** Conventional commit types
+    
+- **Code Organization:** Component-based architecture with clear separation of concerns
+    
+
+## Design and user interface
+
+## Visual design
+
+- **Theme:** Dark theme as primary design
+    
+- **Inspiration:** Visual design based on mockup at ai-income-investor.vercel.app
+    
+- **Components:** Shadcn UI components for consistent look and feel
+    
+- **Icons:** Lucide icons for actions and navigation
+    
+
+## Responsive design
+
+- **Breakpoints:** Support for desktop, tablet, and mobile views
+    
+- **Layout:** Responsive grid system that adapts to screen size
+    
+- **Navigation:** Collapsible navigation for smaller screens
+    
+- **Charts:** Responsive charts that scale appropriately for different devices
+    
+
+## User experience
+
+- **Navigation:** Intuitive navigation between portfolios, securities, and analysis
+    
+- **Data Entry:** Streamlined forms for adding and editing portfolio items
+    
+- **Visualizations:** Clear charts and graphs for technical analysis
+    
+- **Feedback:** Visual feedback for user actions and system processes
+    
+- **Accessibility:** WCAG-compliant design elements for accessibility
+    
+
+## Key screens
+
+1. **Dashboard:** Overview of all portfolios with key metrics and recommendations
+    
+2. **Portfolio List:** List of all portfolios with summary information
+    
+3. **Portfolio Detail:** Detailed view of a single portfolio with all securities
+    
+4. **Security Detail:** In-depth view of a single security with technical analysis
+    
+5. **AI Analysis:** AI-generated recommendations and insights
+    
+6. **Settings:** API token management and user preferences
