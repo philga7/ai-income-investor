@@ -1,6 +1,3 @@
-"use client"
-
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,14 +13,29 @@ import {
   Download,
   ArrowDownRight
 } from "lucide-react";
-import { useParams } from "next/navigation";
 import { SecurityChart } from "@/components/securities/security-chart";
 import { TechnicalIndicators } from "@/components/securities/technical-indicators";
 import { DividendHistory } from "@/components/securities/dividend-history";
 
-export default function SecurityDetail() {
-  const params = useParams();
-  const ticker = params.ticker as string;
+// Add generateStaticParams for static export
+export async function generateStaticParams() {
+  // Return an array of tickers you want to pre-render
+  return [
+    { ticker: 'MSFT' },
+    { ticker: 'AAPL' },
+    { ticker: 'ABBV' },
+    { ticker: 'PEP' },
+    { ticker: 'O' },
+    { ticker: 'XOM' }
+  ];
+}
+
+interface PageProps {
+  params: Promise<{ ticker: string }>;
+}
+
+export default async function SecurityDetail({ params }: PageProps) {
+  const { ticker } = await params;
   
   // This would be fetched from your API/database
   const security = {
@@ -53,8 +65,6 @@ export default function SecurityDetail() {
   
   // Calculate trading signal
   const tradingSignal = security.sma200 === "below" ? "buy" : "hold";
-  
-  const [activeTab, setActiveTab] = useState("overview");
   
   return (
     <div className="space-y-6">
@@ -197,7 +207,7 @@ export default function SecurityDetail() {
         </Card>
       </div>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs defaultValue="overview">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="technical">Technical Analysis</TabsTrigger>
@@ -252,83 +262,11 @@ export default function SecurityDetail() {
             <CardHeader>
               <CardTitle>AI Analysis</CardTitle>
               <CardDescription>
-                AI-powered investment analysis for {ticker}
+                AI-powered insights for {ticker}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="rounded-lg border p-4">
-                <h3 className="text-lg font-medium mb-2">Dividend Sustainability</h3>
-                <div className="mb-4">
-                  <Badge className="bg-green-600">Strong</Badge>
-                  <p className="text-sm mt-2">
-                    {ticker} has a strong record of dividend increases with a sustainable payout ratio of {security.payoutRatio}%.
-                    Their 5-year dividend growth rate of {security.dividendGrowth5yr.toFixed(1)}% indicates a commitment to returning value to shareholders.
-                  </p>
-                </div>
-                
-                <h3 className="text-lg font-medium mb-2">Technical Outlook</h3>
-                <div>
-                  {security.sma200 === "below" ? (
-                    <div>
-                      <Badge className="bg-green-600">Bullish</Badge>
-                      <p className="text-sm mt-2">
-                        {ticker} is currently trading below its 200-day SMA, indicating a potential buying opportunity
-                        according to our dividend investment strategy. The stochastic oscillator shows an oversold condition,
-                        suggesting a potential upward reversal.
-                      </p>
-                    </div>
-                  ) : (
-                    <div>
-                      <Badge variant="outline">Neutral</Badge>
-                      <p className="text-sm mt-2">
-                        {ticker} is currently trading above its 200-day SMA. While the underlying business fundamentals remain strong,
-                        the current price suggests waiting for a better entry point from a valuation perspective.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div className="rounded-lg border p-4">
-                <h3 className="text-lg font-medium mb-2">Investment Recommendation</h3>
-                
-                {security.sma200 === "below" ? (
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-xl font-bold flex items-center">
-                      <ArrowUpRight className="mr-2 h-5 w-5 text-green-500" />
-                      Buy
-                    </span>
-                    <Badge className="bg-green-600">Strong Conviction</Badge>
-                  </div>
-                ) : (
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-xl font-bold">Hold</span>
-                    <Badge variant="outline">Moderate Conviction</Badge>
-                  </div>
-                )}
-                
-                <p className="text-sm mb-4">
-                  {security.sma200 === "below" 
-                    ? `${ticker} currently presents a buying opportunity with its price below the 200-day SMA. The company has strong fundamentals with a sustainable dividend policy and growth potential.`
-                    : `While ${ticker} has strong fundamentals and dividend growth, the current price above the 200-day SMA suggests waiting for a better entry point. Continue holding if already in your portfolio.`
-                  }
-                </p>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Maximum Position Size (5% Rule)</span>
-                    <span className="font-medium">5.0%</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Initial Position Size (1/3 Rule)</span>
-                    <span className="font-medium">1.67%</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Target Price</span>
-                    <span className="font-medium">${(security.price * 1.15).toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
+            <CardContent>
+              <p>AI analysis content will be displayed here.</p>
             </CardContent>
           </Card>
         </TabsContent>

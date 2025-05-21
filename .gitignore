@@ -26,4 +26,13 @@ node_modules/
 
 # Task files
 tasks.json
-tasks/ 
+tasks/
+
+# Build output
+out/
+.next/
+dist/
+build/
+coverage/
+.cache/
+*.tsbuildinfo 
