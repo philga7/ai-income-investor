@@ -20,6 +20,7 @@ node_modules/
 *.njsproj
 *.sln
 *.sw?
+.cursor/
 
 # OS specific
 .DS_Store
@@ -35,4 +36,9 @@ dist/
 build/
 coverage/
 .cache/
-*.tsbuildinfo 
+*.tsbuildinfo
+
+# Project specific
+.roo/
+next-env.d.ts
+components.json 
