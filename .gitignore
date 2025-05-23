@@ -39,6 +39,10 @@ coverage/
 .cache/
 *.tsbuildinfo
 
+# Test artifacts
+tests/test-results/
+tests/playwright-report/
+
 # Project specific
 .roo/
 next-env.d.ts
