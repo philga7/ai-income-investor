@@ -5,7 +5,19 @@ module.exports = {
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   transform: {
-    '^.+\\.[jt]sx?$': 'babel-jest',
+    '^.+\\.(t|j)sx?$': ['@swc/jest', {
+      jsc: {
+        parser: {
+          syntax: 'typescript',
+          tsx: true,
+        },
+        transform: {
+          react: {
+            runtime: 'automatic'
+          }
+        }
+      }
+    }]
   },
   testMatch: ['<rootDir>/__tests__/**/*.test.[jt]s?(x)'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
