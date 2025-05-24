@@ -11,6 +11,7 @@ node_modules/
 
 # Environment variables
 .env
+.env.*
 
 # Editor directories and files
 .idea
@@ -20,6 +21,7 @@ node_modules/
 *.njsproj
 *.sln
 *.sw?
+.cursor/
 
 # OS specific
 .DS_Store
@@ -35,4 +37,13 @@ dist/
 build/
 coverage/
 .cache/
-*.tsbuildinfo 
+*.tsbuildinfo
+
+# Test artifacts
+tests/test-results/
+tests/playwright-report/
+
+# Project specific
+.roo/
+next-env.d.ts
+components.json 
