@@ -22,7 +22,9 @@ jobs:
           sudo apt-get update
       
       - name: Install Playwright
-        run: sudo npx playwright install-deps
+        run: |
+          sudo npx playwright install-deps
+          npx playwright install
       
       - name: Lint
         run: npm run lint
