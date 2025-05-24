@@ -23,7 +23,12 @@ jobs:
         run: npm ci
       
       - name: Deploy for testing
-        run: npm run serve
+        run: |
+          npx serve@latest out &
+          echo "Serving app in background"
+          # Wait for the server to be ready
+          timeout 30s bash -c 'while ! curl -s http://localhost:3000 > /dev/null; do sleep 1; done' || exit 1
+          echo "Server is ready"
 
       - name: Run Unit Tests
         run: npm run test:unit
@@ -38,3 +43,9 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "Cleaning up background processes"
+          pkill -f "serve" || true
