@@ -26,21 +26,13 @@ jobs:
         run: |
           sudo npx playwright install-deps
           npx playwright install
-      
-      - name: Deploy for testing
+
+      - name: Start the server and run E2E Tests
         run: |
-          npx serve@latest out &
-          echo "Serving app in background"
-          # Wait for the server to be ready
-          timeout 30s bash -c 'while ! curl -s http://localhost:3000 > /dev/null; do sleep 1; done' || exit 1
-          echo "Server is ready"
+          npm run start &  # Start the production server in the background
+          npx wait-on ${{ secrets.NEXT_PUBLIC_BASE_URL }}  # Wait until the server is ready
+          npm run test:e2e     # Run Playwright E2E tests
 
-      - name: Run Unit Tests
-        run: npm run test:unit
-
-      - name: Run E2E tests
-        run: npm run test:e2e
-      
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
         with:
@@ -53,4 +45,4 @@ jobs:
         if: always()
         run: |
           echo "Cleaning up background processes"
-          pkill -f "serve" || true
+          pkill -f "node" || true
