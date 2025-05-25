@@ -29,11 +29,10 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Start the server and run E2E Tests
+      - name: Run E2E Tests
         run: |
-          npm run serve &  # Start the production server in the background
-          npx wait-on ${{ secrets.NEXT_PUBLIC_BASE_URL }}  # Wait until the server is ready
-          npm run test:e2e     # Run Playwright E2E tests
+          npm run build && npm run serve:e2e & 
+          npx wait-on tcp:3000 && npm run test:e2e
 
       - name: Cleanup
         if: always()
