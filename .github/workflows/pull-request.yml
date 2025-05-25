@@ -5,9 +5,10 @@ on:
     branches: [ main, develop ]
 
 jobs:
-  validate:
+  test-and-deploy:
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/playwright:v1.52.0-noble
+    environment: pull-request
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -7,29 +7,24 @@ on:
 jobs:
   test-and-deploy:
     runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.52.0-noble
+    environment: development
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
       
       - name: Install dependencies
         run: npm install
 
-      - name: Install Playwright
-        run: |
-          sudo npx playwright install-deps
-          npx playwright install
-
       - name: Run E2E Tests
         run: |
-          npm run build && npm run serve:e2e & 
+          npm run serve & 
           npx wait-on tcp:3000 && npm run test:e2e
+        env:
+          HOME: /root
 
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
