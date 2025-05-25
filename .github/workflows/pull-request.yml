@@ -17,22 +17,19 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-      
-      - name: Install Playwright
-        run: |
-          sudo npx playwright install-deps
-          npx playwright install
-      
       - name: Lint
         run: npm run lint
 
+      - name: Run Unit Tests
+        run: npm run test:unit
+
       - name: Run E2E Tests
-        run: |
-          npm run serve & 
-          npx wait-on tcp:3000 && npm run test:e2e
+        uses: mcr.microsoft.com/playwright:v1.42.1-focal
+        with:
+          working-directory: ${{ github.workspace }}
+          command: |
+            npm run serve & 
+            npx wait-on tcp:3000 && npm run test:e2e
 
       - name: Cleanup
         if: always()
