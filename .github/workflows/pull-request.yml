@@ -28,6 +28,8 @@ jobs:
         run: |
           npm run serve & 
           npx wait-on tcp:3000 && npm run test:e2e
+        env:
+          HOME: /root
 
       - name: Cleanup
         if: always()
