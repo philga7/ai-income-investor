@@ -1,0 +1,45 @@
+name: Production Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.52.0-noble
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run E2E Tests
+        run: |
+          npm run serve & 
+          npx wait-on tcp:3000 && npm run test:e2e
+        env:
+          HOME: /root
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "Cleaning up background processes"
+          pkill -f "node" || true

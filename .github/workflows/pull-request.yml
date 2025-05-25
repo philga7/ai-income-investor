@@ -1,0 +1,39 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.52.0-noble
+    environment: pull-request
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm install
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run Unit Tests
+        run: npm run test:unit
+
+      - name: Run E2E Tests
+        run: |
+          npm run serve & 
+          npx wait-on tcp:3000 && npm run test:e2e
+        env:
+          HOME: /root
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "Cleaning up background processes"
+          pkill -f "node" || true
