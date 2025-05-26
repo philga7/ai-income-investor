@@ -29,6 +29,10 @@ jobs:
         env:
           HOME: /root
 
+      - name: Configure Git
+        run: |
+          git config --global --add safe.directory /__w/ai-income-investor/ai-income-investor
+
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
         with:
