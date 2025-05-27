@@ -14,6 +14,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -75,13 +76,20 @@ jobs:
           vercel build --token=${{ secrets.VERCEL_TOKEN }} --debug
 
       - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          working-directory: ./
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} --debug \
+          vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} \
             --env NEXT_PUBLIC_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL" \
             --env NEXT_PUBLIC_SUPABASE_ANON_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY"
 
       - name: Cleanup
         if: always()
         run: |
-          echo "Cleaning up background processes"
           pkill -f "node" || true
