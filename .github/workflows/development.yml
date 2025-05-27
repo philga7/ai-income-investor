@@ -12,8 +12,6 @@ jobs:
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -38,37 +36,34 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
+      - name: Setup Vercel Configuration
+        run: |
+          echo "Setting up Vercel configuration..."
+          mkdir -p .vercel
+          echo '{"orgId":"${{ secrets.VERCEL_ORG_ID }}","projectId":"${{ secrets.VERCEL_PROJECT_ID }}"}' > .vercel/project.json
+          cat .vercel/project.json
+
       - name: Debug Vercel Configuration
         run: |
           echo "Checking Vercel configuration..."
-          echo "VERCEL_ORG_ID: $VERCEL_ORG_ID"
-          echo "VERCEL_PROJECT_ID: $VERCEL_PROJECT_ID"
-          echo "VERCEL_TOKEN exists: ${{ secrets.VERCEL_TOKEN != '' }}"
           vercel whoami --token ${{ secrets.VERCEL_TOKEN }}
           echo "Current directory: $(pwd)"
           echo "Directory contents:"
           ls -la
+          echo "Vercel configuration:"
+          cat .vercel/project.json
 
       - name: Pull Vercel Environment Information
         run: |
           vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --debug
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Build Project Artifacts
         run: |
           vercel build --token=${{ secrets.VERCEL_TOKEN }} --debug
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Deploy to Vercel
         run: |
           vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} --debug
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Cleanup
         if: always()
