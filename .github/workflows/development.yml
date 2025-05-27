@@ -40,9 +40,14 @@ jobs:
 
       - name: Debug Vercel Configuration
         run: |
+          echo "Checking Vercel configuration..."
           echo "VERCEL_ORG_ID: $VERCEL_ORG_ID"
           echo "VERCEL_PROJECT_ID: $VERCEL_PROJECT_ID"
-          vercel whoami
+          echo "VERCEL_TOKEN exists: ${{ secrets.VERCEL_TOKEN != '' }}"
+          vercel whoami --token ${{ secrets.VERCEL_TOKEN }}
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
 
       - name: Pull Vercel Environment Information
         run: |
