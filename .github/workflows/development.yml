@@ -12,8 +12,6 @@ jobs:
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
     steps:
       - uses: actions/checkout@v4
       
@@ -39,12 +37,11 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      - name: Setup Vercel Configuration
+      - name: Link Vercel Project
         run: |
-          echo "Setting up Vercel configuration..."
-          mkdir -p .vercel
-          echo '{"orgId":"${{ secrets.VERCEL_ORG_ID }}","projectId":"${{ secrets.VERCEL_PROJECT_ID }}"}' > .vercel/project.json
-          cat .vercel/project.json
+          vercel link --yes --token=${{ secrets.VERCEL_TOKEN }} \
+            --project-id=${{ secrets.VERCEL_PROJECT_ID }} \
+            --org-id=${{ secrets.VERCEL_ORG_ID }}
 
       - name: Debug Vercel Configuration
         run: |
@@ -53,8 +50,6 @@ jobs:
           echo "Current directory: $(pwd)"
           echo "Directory contents:"
           ls -la
-          echo "Vercel configuration:"
-          cat .vercel/project.json
 
       - name: Verify Environment Variables
         run: |
