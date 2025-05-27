@@ -51,7 +51,7 @@ export function SignInForm() {
       }
 
       toast.success('Signed in successfully');
-      router.push('/dashboard');
+      router.push('/');
     } catch (error) {
       console.error('Unexpected error during sign in:', error);
       toast.error('An unexpected error occurred during sign in');
