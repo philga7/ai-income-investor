@@ -15,6 +15,9 @@ type AuthContextType = {
     error: AuthError | null;
   }>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<{
+    error: AuthError | null;
+  }>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -91,6 +94,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const deleteAccount = async () => {
+    try {
+      if (!session?.access_token) {
+        return { error: { name: 'AuthError', message: 'No access token', status: 401 } as AuthError };
+      }
+      const res = await fetch('/api/delete-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        return { error: { name: 'AuthError', message: data.error || 'Failed to delete account', status: res.status } as AuthError };
+      }
+      
+      // Clear the session state locally
+      setUser(null);
+      setSession(null);
+      
+      // Sign out without any scope parameter
+      try {
+        await supabase.auth.signOut();
+      } catch (signOutError) {
+        // If sign out fails, we can ignore it since we've already cleared the local state
+        console.warn('Sign out failed after account deletion:', signOutError);
+      }
+      
+      return { error: null };
+    } catch (error) {
+      // Only log unexpected errors in development
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Unexpected delete account error:', error);
+      }
+      return { error: error as AuthError };
+    }
+  };
+
   const value = {
     user,
     session,
@@ -98,6 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signUp,
     signOut,
+    deleteAccount,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
