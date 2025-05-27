@@ -36,12 +36,12 @@ jobs:
           git config --global --add safe.directory /__w/ai-income-investor/ai-income-investor
 
       - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
+        uses: amondnet/vercel-action@v26
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod --scope=${{ secrets.VERCEL_ORG_ID }} --confirm'
+          vercel-args: '--prod'
           working-directory: ./
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
