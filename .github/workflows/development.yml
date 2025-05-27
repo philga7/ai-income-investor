@@ -16,6 +16,7 @@ jobs:
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -48,5 +49,4 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          echo "Cleaning up background processes"
           pkill -f "node" || true
