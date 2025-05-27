@@ -13,6 +13,9 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'AI Income Investor',
   description: 'Smart dividend investing with AI-powered analysis',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
