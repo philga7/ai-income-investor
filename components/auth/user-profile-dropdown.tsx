@@ -12,6 +12,7 @@ import { User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { DeleteAccountDialog } from "./delete-account-dialog";
 
 export function UserProfileDropdown() {
   const { user, signOut } = useAuth();
@@ -63,6 +64,10 @@ export function UserProfileDropdown() {
           data-testid="menu-item"
         >
           Sign out
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem className="p-0" data-testid="menu-item" onSelect={(e) => e.preventDefault()}>
+          <DeleteAccountDialog />
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
