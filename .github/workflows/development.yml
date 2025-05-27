@@ -84,10 +84,9 @@ jobs:
           vercel-args: '--prod'
           working-directory: ./
           github-token: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} \
-            --env NEXT_PUBLIC_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL" \
-            --env NEXT_PUBLIC_SUPABASE_ANON_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY"
+          vercel-env: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
       - name: Cleanup
         if: always()
