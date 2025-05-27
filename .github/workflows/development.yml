@@ -12,8 +12,6 @@ jobs:
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
       
@@ -36,6 +34,47 @@ jobs:
         run: |
           git config --global --add safe.directory /__w/ai-income-investor/ai-income-investor
 
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Setup Vercel Configuration
+        run: |
+          echo "Setting up Vercel configuration..."
+          mkdir -p .vercel
+          echo '{"orgId":"${{ secrets.VERCEL_ORG_ID }}","projectId":"${{ secrets.VERCEL_PROJECT_ID }}"}' > .vercel/project.json
+          cat .vercel/project.json
+
+      - name: Debug Vercel Configuration
+        run: |
+          echo "Checking Vercel configuration..."
+          vercel whoami --token ${{ secrets.VERCEL_TOKEN }}
+          echo "Current directory: $(pwd)"
+          echo "Directory contents:"
+          ls -la
+          echo "Vercel configuration:"
+          cat .vercel/project.json
+
+      - name: Verify Environment Variables
+        run: |
+          echo "Verifying environment variables..."
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
+            echo "Error: NEXT_PUBLIC_SUPABASE_URL is not set"
+            exit 1
+          fi
+          if [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then
+            echo "Error: NEXT_PUBLIC_SUPABASE_ANON_KEY is not set"
+            exit 1
+          fi
+          echo "Environment variables are set"
+
+      - name: Pull Vercel Environment Information
+        run: |
+          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --debug
+
+      - name: Build Project Artifacts
+        run: |
+          vercel build --token=${{ secrets.VERCEL_TOKEN }} --debug
+
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
         with:
@@ -45,6 +84,10 @@ jobs:
           vercel-args: '--prod'
           working-directory: ./
           github-token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} \
+            --env NEXT_PUBLIC_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL" \
+            --env NEXT_PUBLIC_SUPABASE_ANON_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY"
 
       - name: Cleanup
         if: always()
