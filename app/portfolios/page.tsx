@@ -5,44 +5,54 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { PlusCircle, Briefcase, TrendingUp, PieChart } from "lucide-react";
 import Link from "next/link";
 import { ProtectedRoute } from '@/components/auth/protected-route';
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/lib/auth';
 
-interface PortfolioCard {
+interface Portfolio {
   id: string;
   name: string;
-  value: number;
-  yield: number;
-  securities: number;
-  ytdDividends: number;
+  description: string | null;
+  created_at: string;
+  user_id: string;
 }
 
-const portfolios: PortfolioCard[] = [
-  {
-    id: "1",
-    name: "Core Dividend Portfolio",
-    value: 124389.52,
-    yield: 3.85,
-    securities: 25,
-    ytdDividends: 2345.67,
-  },
-  {
-    id: "2",
-    name: "High Yield Income",
-    value: 68745.23,
-    yield: 5.32,
-    securities: 18,
-    ytdDividends: 1825.34,
-  },
-  {
-    id: "3",
-    name: "Dividend Growth",
-    value: 95123.45,
-    yield: 2.45,
-    securities: 22,
-    ytdDividends: 1156.78,
-  },
-];
-
 export default function PortfoliosPage() {
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { session } = useAuth();
+
+  useEffect(() => {
+    const fetchPortfolios = async () => {
+      try {
+        if (!session?.access_token) {
+          throw new Error('No access token available');
+        }
+
+        const response = await fetch('/api/portfolios', {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch portfolios');
+        }
+
+        const data = await response.json();
+        setPortfolios(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (session?.access_token) {
+      fetchPortfolios();
+    }
+  }, [session]);
+
   return (
     <ProtectedRoute>
       <div className="space-y-6">
@@ -61,44 +71,38 @@ export default function PortfoliosPage() {
           </Link>
         </div>
         
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {portfolios.map((portfolio) => (
-            <Link href={`/portfolios/${portfolio.id}`} key={portfolio.id}>
-              <Card className="h-full transition-all hover:shadow-md">
-                <CardHeader className="relative pb-2">
-                  <Briefcase className="h-5 w-5 absolute right-6 top-6 text-muted-foreground" />
-                  <CardTitle>{portfolio.name}</CardTitle>
-                  <CardDescription>{portfolio.securities} securities</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground flex items-center">
-                        <TrendingUp className="mr-1 h-4 w-4" /> Value
+        {loading ? (
+          <div className="text-center py-8">Loading portfolios...</div>
+        ) : error ? (
+          <div className="text-center py-8 text-red-500">{error}</div>
+        ) : portfolios.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No portfolios found. Create your first portfolio to get started.
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {portfolios.map((portfolio) => (
+              <Link href={`/portfolios/${portfolio.id}`} key={portfolio.id}>
+                <Card className="h-full transition-all hover:shadow-md">
+                  <CardHeader className="relative pb-2">
+                    <Briefcase className="h-5 w-5 absolute right-6 top-6 text-muted-foreground" />
+                    <CardTitle>{portfolio.name}</CardTitle>
+                    <CardDescription>
+                      Created {new Date(portfolio.created_at).toLocaleDateString()}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {portfolio.description && (
+                      <p className="text-sm text-muted-foreground mb-4">
+                        {portfolio.description}
                       </p>
-                      <p className="text-lg font-semibold">
-                        ${portfolio.value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                      </p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground flex items-center">
-                        <PieChart className="mr-1 h-4 w-4" /> Yield
-                      </p>
-                      <p className="text-lg font-semibold">
-                        {portfolio.yield.toFixed(2)}%
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="border-t pt-4">
-                  <p className="text-sm">
-                    YTD Dividends: <span className="font-medium">${portfolio.ytdDividends.toLocaleString()}</span>
-                  </p>
-                </CardFooter>
-              </Card>
-            </Link>
-          ))}
-        </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </ProtectedRoute>
   );
