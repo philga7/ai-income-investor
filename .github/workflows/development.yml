@@ -39,24 +39,11 @@ jobs:
 
       - name: Setup Vercel Configuration
         run: |
-          echo "Setting up Vercel configuration..."
           mkdir -p .vercel
           echo '{"orgId":"${{ secrets.VERCEL_ORG_ID }}","projectId":"${{ secrets.VERCEL_PROJECT_ID }}"}' > .vercel/project.json
-          cat .vercel/project.json
-
-      - name: Debug Vercel Configuration
-        run: |
-          echo "Checking Vercel configuration..."
-          vercel whoami --token ${{ secrets.VERCEL_TOKEN }}
-          echo "Current directory: $(pwd)"
-          echo "Directory contents:"
-          ls -la
-          echo "Vercel configuration:"
-          cat .vercel/project.json
 
       - name: Verify Environment Variables
         run: |
-          echo "Verifying environment variables..."
           if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ]; then
             echo "Error: NEXT_PUBLIC_SUPABASE_URL is not set"
             exit 1
@@ -65,24 +52,22 @@ jobs:
             echo "Error: NEXT_PUBLIC_SUPABASE_ANON_KEY is not set"
             exit 1
           fi
-          echo "Environment variables are set"
 
       - name: Pull Vercel Environment Information
         run: |
-          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --debug
+          vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Project Artifacts
         run: |
-          vercel build --token=${{ secrets.VERCEL_TOKEN }} --debug
+          vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy to Vercel
         run: |
-          vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} --debug \
+          vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} \
             --env NEXT_PUBLIC_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL" \
             --env NEXT_PUBLIC_SUPABASE_ANON_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY"
 
       - name: Cleanup
         if: always()
         run: |
-          echo "Cleaning up background processes"
           pkill -f "node" || true
