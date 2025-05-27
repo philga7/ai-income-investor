@@ -37,11 +37,12 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
-      - name: Link Vercel Project
+      - name: Setup Vercel Configuration
         run: |
-          vercel link --yes --token=${{ secrets.VERCEL_TOKEN }} \
-            --project-id=${{ secrets.VERCEL_PROJECT_ID }} \
-            --org-id=${{ secrets.VERCEL_ORG_ID }}
+          echo "Setting up Vercel configuration..."
+          mkdir -p .vercel
+          echo '{"orgId":"${{ secrets.VERCEL_ORG_ID }}","projectId":"${{ secrets.VERCEL_PROJECT_ID }}"}' > .vercel/project.json
+          cat .vercel/project.json
 
       - name: Debug Vercel Configuration
         run: |
@@ -50,6 +51,8 @@ jobs:
           echo "Current directory: $(pwd)"
           echo "Directory contents:"
           ls -la
+          echo "Vercel configuration:"
+          cat .vercel/project.json
 
       - name: Verify Environment Variables
         run: |
