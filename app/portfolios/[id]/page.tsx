@@ -1,20 +1,26 @@
-import { PortfolioDetail } from "./portfolio-detail";
+'use client';
 
-export async function generateStaticParams() {
-  // Return an array of portfolio IDs you want to pre-render
-  return [
-    { id: 'core-dividend' },
-    { id: 'growth-income' },
-    { id: 'retirement' }
-  ];
-}
+import { useSearchParams } from 'next/navigation';
+import { PortfolioDetail } from './portfolio-detail';
+import { use } from 'react';
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function Page({ params }: PageProps) {
-  const { id } = await params;
+export default function Page({ params }: PageProps) {
+  const { id } = use(params);
+  const searchParams = useSearchParams();
+  const portfolioData = searchParams?.get('portfolio');
   
-  return <PortfolioDetail portfolioId={id} />;
+  let portfolio = null;
+  if (portfolioData) {
+    try {
+      portfolio = JSON.parse(portfolioData);
+    } catch (error) {
+      console.error('Error parsing portfolio data:', error);
+    }
+  }
+  
+  return <PortfolioDetail portfolioId={id} initialPortfolio={portfolio} />;
 }
