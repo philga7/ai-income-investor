@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { Pencil } from 'lucide-react';
 import { toast } from 'sonner';
+import { useAuth } from '@/lib/auth';
 
 interface EditPortfolioDialogProps {
   portfolio: {
@@ -32,9 +33,15 @@ export function EditPortfolioDialog({ portfolio, onPortfolioUpdated }: EditPortf
     name: portfolio.name,
     description: portfolio.description || '',
   });
+  const { session } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!session?.access_token) {
+      toast.error('You must be logged in to edit a portfolio');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -42,7 +49,7 @@ export function EditPortfolioDialog({ portfolio, onPortfolioUpdated }: EditPortf
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token')}`,
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify(formData),
       });
