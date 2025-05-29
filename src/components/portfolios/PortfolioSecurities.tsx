@@ -8,12 +8,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Pencil } from 'lucide-react';
+import Link from 'next/link';
 
 interface PortfolioSecuritiesProps {
   securities: PortfolioSecurity[];
+  portfolioId: string;
 }
 
-export function PortfolioSecurities({ securities }: PortfolioSecuritiesProps) {
+export function PortfolioSecurities({ securities, portfolioId }: PortfolioSecuritiesProps) {
   return (
     <div className="rounded-md border">
       <Table>
@@ -28,6 +32,7 @@ export function PortfolioSecurities({ securities }: PortfolioSecuritiesProps) {
             <TableHead className="text-right">Market Value</TableHead>
             <TableHead className="text-right">Gain/Loss</TableHead>
             <TableHead className="text-right">Yield</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -52,6 +57,13 @@ export function PortfolioSecurities({ securities }: PortfolioSecuritiesProps) {
                   ${gainLoss.toLocaleString()} ({gainLossPercentage.toFixed(2)}%)
                 </TableCell>
                 <TableCell className="text-right">{ps.security.yield.toFixed(2)}%</TableCell>
+                <TableCell className="text-right">
+                  <Link href={`/portfolios/${portfolioId}/securities/${ps.id}/edit`}>
+                    <Button variant="ghost" size="icon">
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </TableCell>
               </TableRow>
             );
           })}

@@ -19,7 +19,7 @@ export default async function PortfolioPage({ params }: PortfolioPageProps) {
   return (
     <div className="container mx-auto py-8 space-y-8">
       <PortfolioHeader portfolio={portfolio} />
-      <PortfolioSecurities securities={portfolio.securities} />
+      <PortfolioSecurities securities={portfolio.securities} portfolioId={params.id} />
     </div>
   );
 } 

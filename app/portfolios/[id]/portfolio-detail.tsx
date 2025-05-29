@@ -14,7 +14,8 @@ import {
   ArrowDownRight, 
   DollarSign,
   BarChart4, 
-  PieChart 
+  PieChart,
+  Pencil
 } from "lucide-react";
 import Link from "next/link";
 import { PortfolioSecurityChart } from "@/components/portfolios/portfolio-security-chart";
@@ -195,6 +196,7 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
                   <TableHead className="text-right">Current Price</TableHead>
                   <TableHead className="text-right">Value</TableHead>
                   <TableHead className="text-right">Yield</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -211,6 +213,13 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
                     </TableCell>
                     <TableCell className="text-right">
                       {ps.security.yield.toFixed(2)}%
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Link href={`/portfolios/${portfolioId}/securities/${ps.id}/edit`}>
+                        <Button variant="ghost" size="icon">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </Link>
                     </TableCell>
                   </TableRow>
                 ))}
