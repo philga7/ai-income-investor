@@ -9,7 +9,8 @@ import {
   DollarSign,
   BarChart4, 
   PieChart,
-  Pencil
+  Pencil,
+  BarChart3
 } from "lucide-react";
 import Link from "next/link";
 import { EditPortfolioDialog } from "@/components/portfolios/edit-portfolio-dialog";
@@ -18,6 +19,7 @@ import { toast } from "sonner";
 import { useAuth } from '@/lib/auth';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DeleteSecurityDialog } from "@/components/portfolios/delete-security-dialog";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 
 interface Portfolio {
   id: string;
@@ -137,6 +139,11 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
 
   return (
     <div className="container mx-auto py-8 space-y-8">
+      <Breadcrumb items={[
+        { label: 'Portfolios', href: '/portfolios' },
+        { label: portfolio.name, href: `/portfolios/${portfolioId}` }
+      ]} />
+      
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <div>
@@ -258,6 +265,11 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Link href={`/portfolios/${portfolioId}/securities/${ps.id}`}>
+                          <Button variant="ghost" size="icon">
+                            <BarChart3 className="h-4 w-4" />
+                          </Button>
+                        </Link>
                         <Link href={`/portfolios/${portfolioId}/securities/${ps.id}/edit`}>
                           <Button variant="ghost" size="icon">
                             <Pencil className="h-4 w-4" />
