@@ -24,6 +24,7 @@ import { EditPortfolioDialog } from "@/components/portfolios/edit-portfolio-dial
 import { toast } from "sonner";
 import { useAuth } from '@/lib/auth';
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { DeleteSecurityDialog } from "@/components/portfolios/delete-security-dialog";
 
 interface Portfolio {
   id: string;
@@ -125,6 +126,10 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
     }
   }, [initialPortfolio, fetchPortfolio, portfolioId, session]);
 
+  const handleSecurityDeleted = () => {
+    fetchPortfolio();
+  };
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -215,11 +220,19 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
                       {ps.security.yield.toFixed(2)}%
                     </TableCell>
                     <TableCell className="text-right">
-                      <Link href={`/portfolios/${portfolioId}/securities/${ps.id}/edit`}>
-                        <Button variant="ghost" size="icon">
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </Link>
+                      <div className="flex justify-end gap-2">
+                        <Link href={`/portfolios/${portfolioId}/securities/${ps.id}/edit`}>
+                          <Button variant="ghost" size="icon">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <DeleteSecurityDialog
+                          portfolioId={portfolioId}
+                          securityId={ps.id}
+                          securityName={ps.security.name}
+                          onDelete={handleSecurityDeleted}
+                        />
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

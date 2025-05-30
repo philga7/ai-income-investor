@@ -11,13 +11,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Pencil } from 'lucide-react';
 import Link from 'next/link';
+import { DeleteSecurityDialog } from './delete-security-dialog';
 
 interface PortfolioSecuritiesProps {
   securities: PortfolioSecurity[];
   portfolioId: string;
+  onSecurityDeleted?: () => void;
 }
 
-export function PortfolioSecurities({ securities, portfolioId }: PortfolioSecuritiesProps) {
+export function PortfolioSecurities({ securities, portfolioId, onSecurityDeleted }: PortfolioSecuritiesProps) {
   return (
     <div className="rounded-md border">
       <Table>
@@ -58,11 +60,19 @@ export function PortfolioSecurities({ securities, portfolioId }: PortfolioSecuri
                 </TableCell>
                 <TableCell className="text-right">{ps.security.yield.toFixed(2)}%</TableCell>
                 <TableCell className="text-right">
-                  <Link href={`/portfolios/${portfolioId}/securities/${ps.id}/edit`}>
-                    <Button variant="ghost" size="icon">
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </Link>
+                  <div className="flex justify-end gap-2">
+                    <Link href={`/portfolios/${portfolioId}/securities/${ps.id}/edit`}>
+                      <Button variant="ghost" size="icon">
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                    <DeleteSecurityDialog
+                      portfolioId={portfolioId}
+                      securityId={ps.id}
+                      securityName={ps.security.name}
+                      onDelete={onSecurityDeleted}
+                    />
+                  </div>
                 </TableCell>
               </TableRow>
             );
