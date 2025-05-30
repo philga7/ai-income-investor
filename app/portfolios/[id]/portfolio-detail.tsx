@@ -3,24 +3,17 @@
 import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { 
-  ArrowUpDown, 
-  PlusCircle, 
   AlertCircle, 
-  ArrowUpRight, 
-  ArrowDownRight, 
   DollarSign,
   BarChart4, 
   PieChart,
   Pencil
 } from "lucide-react";
 import Link from "next/link";
-import { PortfolioSecurityChart } from "@/components/portfolios/portfolio-security-chart";
-import { PositionCalculator } from "@/components/portfolios/position-calculator";
 import { EditPortfolioDialog } from "@/components/portfolios/edit-portfolio-dialog";
+import { DeletePortfolioDialog } from "@/components/portfolios/delete-portfolio-dialog";
 import { toast } from "sonner";
 import { useAuth } from '@/lib/auth';
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -31,7 +24,9 @@ interface Portfolio {
   name: string;
   description: string | null;
   created_at: string;
+  updated_at: string;
   user_id: string;
+  securities: PortfolioSecurity[];
 }
 
 interface PortfolioSecurity {
@@ -47,7 +42,7 @@ interface PortfolioSecurity {
     sector: string;
     price: number;
     yield: number;
-    sma200: string;
+    sma200: "above" | "below";
     tags: string[];
   };
 }
@@ -65,69 +60,71 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
 
   const fetchPortfolio = useCallback(async () => {
     if (!session?.access_token) {
+      toast.error('You must be logged in to view portfolios');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/portfolios/${portfolioId}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch portfolio');
+      }
+
+      const data = await response.json();
+      setPortfolio(data);
+    } catch (error) {
+      console.error('Error fetching portfolio:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to fetch portfolio');
+    } finally {
       setLoading(false);
+    }
+  }, [portfolioId, session]);
+
+  const fetchSecurities = useCallback(async () => {
+    if (!session?.access_token) {
       return;
     }
 
     try {
-      const [portfolioResponse, securitiesResponse] = await Promise.all([
-        fetch(`/api/portfolios/${portfolioId}`, {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        }),
-        fetch(`/api/portfolios/${portfolioId}/securities`, {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        })
-      ]);
+      const response = await fetch(`/api/portfolios/${portfolioId}/securities`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+      });
 
-      if (!portfolioResponse.ok) {
-        throw new Error('Failed to fetch portfolio');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch securities');
       }
 
-      if (!securitiesResponse.ok) {
-        throw new Error('Failed to fetch securities');
-      }
-
-      const [portfolioData, securitiesData] = await Promise.all([
-        portfolioResponse.json(),
-        securitiesResponse.json()
-      ]);
-
-      setPortfolio(portfolioData);
-      setSecurities(securitiesData);
+      const data = await response.json();
+      setSecurities(data);
     } catch (error) {
-      console.error('Error fetching data:', error);
-      toast.error('Failed to load portfolio details');
-    } finally {
-      setLoading(false);
+      console.error('Error fetching securities:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to fetch securities');
     }
   }, [portfolioId, session]);
 
   useEffect(() => {
     if (!initialPortfolio) {
       fetchPortfolio();
-    } else if (session?.access_token) {
-      // If we have an initial portfolio, we should still fetch the securities
-      fetch(`/api/portfolios/${portfolioId}/securities`, {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      })
-        .then(response => response.json())
-        .then(data => {
-          setSecurities(data);
-        })
-        .catch(error => {
-          console.error('Error fetching securities for initial portfolio:', error);
-        });
     }
-  }, [initialPortfolio, fetchPortfolio, portfolioId, session]);
+    fetchSecurities();
+  }, [initialPortfolio, fetchPortfolio, fetchSecurities]);
+
+  const handlePortfolioUpdated = () => {
+    fetchPortfolio();
+  };
 
   const handleSecurityDeleted = () => {
-    fetchPortfolio();
+    fetchSecurities();
   };
 
   if (loading) {
@@ -139,55 +136,90 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
   }
 
   return (
-    <div className="space-y-6">
-      <Alert className="mb-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Currently displaying sample data. Real-time market data will be available when the financial API integration is complete.
-        </AlertDescription>
-      </Alert>
-
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center">
-            <h1 className="text-3xl font-bold tracking-tight mr-2">{portfolio.name}</h1>
-            <EditPortfolioDialog 
-              portfolio={portfolio} 
-              onPortfolioUpdated={fetchPortfolio}
-            />
+    <div className="container mx-auto py-8 space-y-8">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div>
+            <CardTitle className="text-2xl font-bold">{portfolio.name}</CardTitle>
+            {portfolio.description && (
+              <CardDescription>{portfolio.description}</CardDescription>
+            )}
           </div>
-          <p className="text-muted-foreground">
-            Created {new Date(portfolio.created_at).toLocaleDateString()}
-          </p>
-          {portfolio.description && (
-            <p className="text-muted-foreground mt-2">
-              {portfolio.description}
-            </p>
-          )}
-        </div>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Link href={`/portfolios/${portfolioId}/add-security`}>
-            <Button variant="outline" className="w-full sm:w-auto">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Security
-            </Button>
-          </Link>
-          <Button className="w-full sm:w-auto">
-            <ArrowUpDown className="mr-2 h-4 w-4" />
-            Rebalance
-          </Button>
-        </div>
-      </div>
-      
+          <div className="flex items-center space-x-2">
+            <EditPortfolioDialog portfolio={portfolio} onPortfolioUpdated={handlePortfolioUpdated} />
+            <DeletePortfolioDialog portfolioId={portfolio.id} portfolioName={portfolio.name} />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Value</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  ${securities.reduce((sum, ps) => sum + ps.shares * ps.security.price, 0).toFixed(2)}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Yield</CardTitle>
+                <BarChart4 className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {securities.length > 0
+                    ? (securities.reduce((sum, ps) => sum + ps.security.yield * ps.shares * ps.security.price, 0) /
+                        securities.reduce((sum, ps) => sum + ps.shares * ps.security.price, 0)).toFixed(2)
+                    : '0.00'}%
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Positions</CardTitle>
+                <PieChart className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{securities.length}</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Avg. Cost</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  ${securities.length > 0
+                    ? (securities.reduce((sum, ps) => sum + ps.average_cost * ps.shares, 0) /
+                        securities.reduce((sum, ps) => sum + ps.shares, 0)).toFixed(2)
+                    : '0.00'}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>Securities</CardTitle>
-          <CardDescription>Your portfolio holdings</CardDescription>
+          <CardDescription>
+            Manage your portfolio securities
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {securities.length === 0 ? (
-            <div className="text-center py-4 text-muted-foreground">
-              No securities added yet. Click &ldquo;Add Security&ldquo; to get started.
+            <div className="text-center py-8">
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  No securities found. Add your first security to get started.
+                </AlertDescription>
+              </Alert>
             </div>
           ) : (
             <Table>
@@ -197,9 +229,9 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
                   <TableHead>Name</TableHead>
                   <TableHead>Sector</TableHead>
                   <TableHead className="text-right">Shares</TableHead>
-                  <TableHead className="text-right">Avg Cost</TableHead>
+                  <TableHead className="text-right">Avg. Cost</TableHead>
                   <TableHead className="text-right">Current Price</TableHead>
-                  <TableHead className="text-right">Value</TableHead>
+                  <TableHead className="text-right">Market Value</TableHead>
                   <TableHead className="text-right">Yield</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
