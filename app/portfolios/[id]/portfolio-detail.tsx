@@ -213,13 +213,18 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
         </CardHeader>
         <CardContent>
           {securities.length === 0 ? (
-            <div className="text-center py-8">
+            <div className="text-center py-8 space-y-4">
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
                   No securities found. Add your first security to get started.
                 </AlertDescription>
               </Alert>
+              <Link href={`/portfolios/${portfolioId}/add-security`}>
+                <Button variant="default">
+                  Add Security
+                </Button>
+              </Link>
             </div>
           ) : (
             <Table>

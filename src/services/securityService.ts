@@ -67,7 +67,7 @@ export const securityService = {
         })
         .eq('id', securityId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (updateError) {
         console.error('Error updating security:', updateError);
