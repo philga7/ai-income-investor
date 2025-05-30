@@ -194,19 +194,10 @@ export async function POST(
       .eq('ticker', ticker)
       .single();
 
-    console.log('API: Checking for existing security:', { ticker, security, securityError });
-
     // If security doesn't exist, create it
     if (securityError) {
       // Get real-time security data
       const securityData = await securityService.getSecurityData(ticker);
-      console.log('API: Fetched security data:', securityData);
-
-      console.log('API: Security not found, creating new security with data:', {
-        ticker,
-        ...securityData,
-        price: securityData?.price || average_cost,
-      });
 
       // Create a new security with real-time data
       const { data: newSecurity, error: createSecurityError } = await supabase
@@ -225,8 +216,6 @@ export async function POST(
         .select()
         .single();
 
-      console.log('API: Security creation result:', { newSecurity, createSecurityError });
-
       if (createSecurityError) {
         console.error('API: Error creating security:', createSecurityError);
         console.error('API: Error details:', {
@@ -243,14 +232,11 @@ export async function POST(
 
       if (!newSecurity) {
         // If no data returned but no error, try to fetch the security again
-        console.log('API: No security data returned, attempting to fetch newly created security');
         const { data: fetchedSecurity, error: fetchError } = await supabase
           .from('securities')
           .select('*')
           .eq('ticker', ticker)
           .single();
-
-        console.log('API: Fetch attempt result:', { fetchedSecurity, fetchError });
 
         if (fetchError || !fetchedSecurity) {
           console.error('API: Failed to fetch newly created security:', fetchError);
@@ -261,22 +247,18 @@ export async function POST(
         }
 
         security = fetchedSecurity;
-        console.log('API: Successfully fetched newly created security:', security);
       } else {
         security = newSecurity;
-        console.log('API: Successfully created new security:', security);
       }
     } else {
       // Update existing security with real-time data
       const updatedSecurity = await securityService.updateSecurityData(security.id);
       if (updatedSecurity) {
         security = updatedSecurity;
-        console.log('API: Updated existing security with real-time data:', security);
       }
     }
 
     // Check if security is already in portfolio
-    console.log('API: Checking if security exists in portfolio:', { portfolioId: id, securityId: security.id });
     const { data: existingSecurity, error: existingSecurityError } = await supabase
       .from('portfolio_securities')
       .select('*')
@@ -284,10 +266,7 @@ export async function POST(
       .eq('security_id', security.id)
       .single();
 
-    console.log('API: Portfolio security check result:', { existingSecurity, existingSecurityError });
-
     if (existingSecurity) {
-      console.log('API: Security already exists in portfolio');
       return NextResponse.json(
         { error: 'Security already exists in portfolio' },
         { status: 400 }
@@ -295,13 +274,6 @@ export async function POST(
     }
 
     // Add security to portfolio
-    console.log('API: Adding security to portfolio:', {
-      portfolioId: id,
-      securityId: security.id,
-      shares,
-      average_cost
-    });
-
     const { data: portfolioSecurity, error: portfolioSecurityError } = await supabase
       .from('portfolio_securities')
       .insert([
@@ -314,8 +286,6 @@ export async function POST(
       ])
       .select()
       .single();
-
-    console.log('API: Portfolio security addition result:', { portfolioSecurity, portfolioSecurityError });
 
     if (portfolioSecurityError) {
       console.error('Error adding security to portfolio:', portfolioSecurityError);
