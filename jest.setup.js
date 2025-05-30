@@ -2,6 +2,24 @@ const { TextEncoder, TextDecoder } = require('util');
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 
+// Mock fetch to always return a dummy successful response, with an array for /securities endpoints
+global.fetch = jest.fn((url) => {
+  if (typeof url === 'string' && url.includes('/securities')) {
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve([]),
+      text: () => Promise.resolve(''),
+    });
+  }
+  return Promise.resolve({
+    ok: true,
+    status: 200,
+    json: () => Promise.resolve({}),
+    text: () => Promise.resolve(''),
+  });
+});
+
 // Only keep if you're actually using fetch in tests
 const { Response, Request, Headers } = require('node-fetch');
 global.Response = Response;
@@ -39,4 +57,19 @@ require('msw').setupServer;
 jest.mock('@radix-ui/react-portal', () => ({
   __esModule: true,
   Portal: ({ children }) => children,
+}));
+
+jest.mock('@/lib/supabase', () => ({
+  supabase: {
+    from: jest.fn(() => ({
+      select: jest.fn(),
+      insert: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    })),
+    auth: {
+      signIn: jest.fn(),
+      signOut: jest.fn(),
+    },
+  },
 }));
