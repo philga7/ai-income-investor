@@ -116,5 +116,67 @@ export const portfolioService = {
         }
       }))
     }));
+  },
+
+  async searchPortfolios(query: string, filters?: {
+    sortBy?: 'name' | 'created_at';
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<Portfolio[]> {
+    let queryBuilder = supabase
+      .from('portfolios')
+      .select(`
+        *,
+        portfolio_securities (
+          id,
+          shares,
+          average_cost,
+          security:securities (
+            id,
+            ticker,
+            name,
+            sector,
+            price,
+            yield,
+            sma200,
+            tags
+          )
+        )
+      `);
+
+    // Apply search query if provided
+    if (query) {
+      queryBuilder = queryBuilder.ilike('name', `%${query}%`);
+    }
+
+    // Apply sorting
+    if (filters?.sortBy) {
+      queryBuilder = queryBuilder.order(filters.sortBy, { 
+        ascending: filters.sortOrder === 'asc' 
+      });
+    } else {
+      // Default sorting by created_at desc
+      queryBuilder = queryBuilder.order('created_at', { ascending: false });
+    }
+
+    const { data: portfolios, error } = await queryBuilder;
+
+    if (error) {
+      console.error('Error searching portfolios:', error);
+      return [];
+    }
+
+    return portfolios.map((portfolio: any) => ({
+      ...portfolio,
+      securities: portfolio.portfolio_securities.map((ps: any) => ({
+        id: ps.id,
+        shares: Number(ps.shares),
+        average_cost: Number(ps.average_cost),
+        security: {
+          ...ps.security,
+          price: Number(ps.security.price),
+          yield: Number(ps.security.yield)
+        }
+      }))
+    }));
   }
 }; 

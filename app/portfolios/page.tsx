@@ -2,23 +2,21 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Briefcase, TrendingUp, PieChart } from "lucide-react";
+import { PlusCircle, Briefcase, TrendingUp, PieChart, Search, ArrowUpDown } from "lucide-react";
 import Link from "next/link";
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth';
-
-interface Portfolio {
-  id: string;
-  name: string;
-  description: string | null;
-  created_at: string;
-  user_id: string;
-}
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { portfolioService, Portfolio } from '@/services/portfolioService';
 
 export default function PortfoliosPage() {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'created_at'>('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const { session } = useAuth();
 
   useEffect(() => {
@@ -29,17 +27,10 @@ export default function PortfoliosPage() {
       }
 
       try {
-        const response = await fetch('/api/portfolios', {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-          },
+        const data = await portfolioService.searchPortfolios(searchQuery, {
+          sortBy,
+          sortOrder
         });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch portfolios');
-        }
-
-        const data = await response.json();
         setPortfolios(data);
       } catch (error) {
         console.error('Error fetching portfolios:', error);
@@ -48,8 +39,18 @@ export default function PortfoliosPage() {
       }
     };
 
-    fetchPortfolios();
-  }, [session]);
+    const debounceTimer = setTimeout(() => {
+      fetchPortfolios();
+    }, 300);
+
+    return () => clearTimeout(debounceTimer);
+  }, [session, searchQuery, sortBy, sortOrder]);
+
+  const handleSortChange = (value: string) => {
+    const [newSortBy, newSortOrder] = value.split('-');
+    setSortBy(newSortBy as 'name' | 'created_at');
+    setSortOrder(newSortOrder as 'asc' | 'desc');
+  };
 
   if (loading) {
     return <div>Loading...</div>;
@@ -68,9 +69,35 @@ export default function PortfoliosPage() {
           </Link>
         </div>
 
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search portfolios..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8"
+            />
+          </div>
+          <Select
+            value={`${sortBy}-${sortOrder}`}
+            onValueChange={handleSortChange}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name-asc">Name (A-Z)</SelectItem>
+              <SelectItem value="name-desc">Name (Z-A)</SelectItem>
+              <SelectItem value="created_at-desc">Newest First</SelectItem>
+              <SelectItem value="created_at-asc">Oldest First</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {portfolios.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            No portfolios found. Create your first portfolio to get started.
+            {searchQuery ? 'No portfolios found matching your search.' : 'No portfolios found. Create your first portfolio to get started.'}
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
