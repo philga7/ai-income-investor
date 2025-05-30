@@ -11,14 +11,14 @@ interface PageProps {
 export default function Page({ params }: PageProps) {
   const { id } = use(params);
   const searchParams = useSearchParams();
-  const portfolioData = searchParams?.get('portfolio');
+  const portfolioParam = searchParams?.get('portfolio');
   
   let portfolio = null;
-  if (portfolioData) {
+  if (portfolioParam) {
     try {
-      portfolio = JSON.parse(portfolioData);
+      portfolio = JSON.parse(portfolioParam);
     } catch (error) {
-      console.error('Error parsing portfolio data:', error);
+      console.error('Error parsing portfolio:', error);
     }
   }
   
