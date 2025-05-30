@@ -123,9 +123,9 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
     fetchPortfolio();
   };
 
-  const handleSecurityDeleted = () => {
+  const handleSecurityDeleted = useCallback(() => {
     fetchSecurities();
-  };
+  }, [fetchSecurities]);
 
   if (loading) {
     return <div>Loading...</div>;
