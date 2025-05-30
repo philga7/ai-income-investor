@@ -44,15 +44,6 @@ export default function Header() {
         </div>
 
         <div className="flex items-center justify-end space-x-4">
-          <div className="relative hidden md:flex">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search securities..."
-              className="w-[200px] pl-8 md:w-[260px] lg:w-[320px]"
-            />
-          </div>
-
           {user ? (
             <>
               <Button variant="ghost" size="icon">

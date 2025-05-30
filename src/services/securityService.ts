@@ -79,5 +79,68 @@ export const securityService = {
       console.error('Error in updateSecurityData:', error);
       return null;
     }
+  },
+
+  async searchSecurities(query: string, filters?: {
+    sector?: string;
+    minYield?: number;
+    maxYield?: number;
+    sma200?: 'above' | 'below';
+    sortBy?: 'ticker' | 'name' | 'yield' | 'price';
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<Security[]> {
+    try {
+      let queryBuilder = supabase
+        .from('securities')
+        .select('*');
+
+      // Apply search query if provided
+      if (query) {
+        queryBuilder = queryBuilder.or(`ticker.ilike.%${query}%,name.ilike.%${query}%`);
+      }
+
+      // Apply filters
+      if (filters?.sector) {
+        queryBuilder = queryBuilder.eq('sector', filters.sector);
+      }
+
+      if (filters?.minYield !== undefined) {
+        queryBuilder = queryBuilder.gte('yield', filters.minYield);
+      }
+
+      if (filters?.maxYield !== undefined) {
+        queryBuilder = queryBuilder.lte('yield', filters.maxYield);
+      }
+
+      if (filters?.sma200) {
+        queryBuilder = queryBuilder.eq('sma200', filters.sma200);
+      }
+
+      // Apply sorting
+      if (filters?.sortBy) {
+        queryBuilder = queryBuilder.order(filters.sortBy, { 
+          ascending: filters.sortOrder === 'asc' 
+        });
+      } else {
+        // Default sorting by ticker
+        queryBuilder = queryBuilder.order('ticker', { ascending: true });
+      }
+
+      const { data: securities, error } = await queryBuilder;
+
+      if (error) {
+        console.error('Error searching securities:', error);
+        return [];
+      }
+
+      return securities.map(security => ({
+        ...security,
+        price: Number(security.price),
+        yield: Number(security.yield)
+      }));
+    } catch (error) {
+      console.error('Error in searchSecurities:', error);
+      return [];
+    }
   }
 }; 
