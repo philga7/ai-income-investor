@@ -11,6 +11,23 @@ export interface DividendMetrics {
       monthlyDividend: number;
       yield: number;
       contributionToPortfolioYield: number;
+      projectedAnnualDividend?: number;
+      projectedMonthlyDividend?: number;
+      projectedYield?: number;
+    };
+  };
+}
+
+export interface ProjectedDividendMetrics {
+  projectedAnnualDividend: number;
+  projectedMonthlyDividend: number;
+  projectedPortfolioYield: number;
+  projectedSecurityDividends: {
+    [securityId: string]: {
+      projectedAnnualDividend: number;
+      projectedMonthlyDividend: number;
+      projectedYield: number;
+      growthRate: number;
     };
   };
 }
@@ -29,11 +46,20 @@ export const dividendService = {
       const monthlyDividend = annualDividend / 12;
       const contributionToPortfolioYield = (annualDividend / marketValue) * 100;
 
+      // Calculate projected dividends based on historical growth rate
+      const growthRate = security.security.dividendGrowth5yr || 0;
+      const projectedAnnualDividend = annualDividend * (1 + growthRate / 100);
+      const projectedMonthlyDividend = projectedAnnualDividend / 12;
+      const projectedYield = (projectedAnnualDividend / marketValue) * 100;
+
       securityDividends[security.security.id] = {
         annualDividend,
         monthlyDividend,
         yield: security.security.yield,
         contributionToPortfolioYield,
+        projectedAnnualDividend,
+        projectedMonthlyDividend,
+        projectedYield,
       };
 
       totalAnnualDividend += annualDividend;
@@ -47,6 +73,39 @@ export const dividendService = {
       portfolioYield: totalPortfolioValue > 0 ? (totalAnnualDividend / totalPortfolioValue) * 100 : 0,
       weightedAverageYield: weightedYieldSum,
       securityDividends,
+    };
+  },
+
+  calculateProjectedDividends(portfolio: Portfolio): ProjectedDividendMetrics {
+    const projectedSecurityDividends: ProjectedDividendMetrics['projectedSecurityDividends'] = {};
+    let projectedTotalAnnualDividend = 0;
+    let totalPortfolioValue = 0;
+
+    portfolio.securities.forEach((security) => {
+      const marketValue = security.shares * security.security.price;
+      const currentAnnualDividend = marketValue * (security.security.yield / 100);
+      const growthRate = security.security.dividendGrowth5yr || 0;
+      
+      const projectedAnnualDividend = currentAnnualDividend * (1 + growthRate / 100);
+      const projectedMonthlyDividend = projectedAnnualDividend / 12;
+      const projectedYield = (projectedAnnualDividend / marketValue) * 100;
+
+      projectedSecurityDividends[security.security.id] = {
+        projectedAnnualDividend,
+        projectedMonthlyDividend,
+        projectedYield,
+        growthRate,
+      };
+
+      projectedTotalAnnualDividend += projectedAnnualDividend;
+      totalPortfolioValue += marketValue;
+    });
+
+    return {
+      projectedAnnualDividend: projectedTotalAnnualDividend,
+      projectedMonthlyDividend: projectedTotalAnnualDividend / 12,
+      projectedPortfolioYield: totalPortfolioValue > 0 ? (projectedTotalAnnualDividend / totalPortfolioValue) * 100 : 0,
+      projectedSecurityDividends,
     };
   },
 
