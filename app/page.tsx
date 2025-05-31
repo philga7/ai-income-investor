@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
 import { PortfolioSummary } from '@/components/dashboard/portfolio-summary';
 import { DividendTimeline } from '@/components/dashboard/dividend-timeline';
 import { RecommendedStocks } from '@/components/dashboard/recommended-stocks';
@@ -11,8 +12,31 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { ProtectedRoute } from '@/components/auth/protected-route';
+import { portfolioService } from '@/services/portfolioService';
+import { Portfolio } from '@/services/portfolioService';
 
 export default function Home() {
+  const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadPortfolio() {
+      try {
+        // Fetch the first portfolio for now - you might want to change this based on your requirements
+        const portfolios = await portfolioService.getPortfolios();
+        if (portfolios.length > 0) {
+          setPortfolio(portfolios[0]);
+        }
+      } catch (error) {
+        console.error('Error loading portfolio:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadPortfolio();
+  }, []);
+
   return (
     <ProtectedRoute>
       <div className="space-y-6">
@@ -33,7 +57,7 @@ export default function Home() {
         
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <PortfolioSummary />
-          <DividendTimeline />
+          {portfolio && <DividendTimeline portfolio={portfolio} />}
           <MarketOverview />
         </div>
         
