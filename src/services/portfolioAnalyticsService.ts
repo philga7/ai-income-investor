@@ -23,6 +23,25 @@ export interface PortfolioAnalytics {
 
 export const portfolioAnalyticsService = {
   calculatePortfolioAnalytics(portfolio: Portfolio): PortfolioAnalytics {
+    if (!portfolio || !portfolio.securities) {
+      return {
+        valueMetrics: {
+          totalValue: 0,
+          totalCost: 0,
+          totalGainLoss: 0,
+          totalGainLossPercentage: 0,
+          securityValues: {}
+        },
+        dividendMetrics: {
+          totalAnnualDividend: 0,
+          totalMonthlyDividend: 0,
+          portfolioYield: 0,
+          weightedAverageYield: 0,
+          securityDividends: {}
+        }
+      };
+    }
+
     return {
       valueMetrics: this.calculatePortfolioValue(portfolio),
       dividendMetrics: dividendService.calculateDividendMetrics(portfolio),
@@ -30,6 +49,16 @@ export const portfolioAnalyticsService = {
   },
 
   calculatePortfolioValue(portfolio: Portfolio): PortfolioValueMetrics {
+    if (!portfolio || !portfolio.securities) {
+      return {
+        totalValue: 0,
+        totalCost: 0,
+        totalGainLoss: 0,
+        totalGainLossPercentage: 0,
+        securityValues: {}
+      };
+    }
+
     const securityValues: PortfolioValueMetrics['securityValues'] = {};
     let totalValue = 0;
     let totalCost = 0;

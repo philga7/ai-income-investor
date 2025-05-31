@@ -47,6 +47,7 @@ interface PortfolioSecurity {
     yield: number;
     sma200: "above" | "below";
     tags: string[];
+    dividendGrowth5yr: number;
   };
 }
 
@@ -181,6 +182,9 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
                 <div className="text-2xl font-bold">
                   {analytics ? portfolioAnalyticsService.formatPercentage(analytics.dividendMetrics.portfolioYield) : '0.00%'}
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Projected: {analytics ? portfolioAnalyticsService.formatPercentage(analytics.dividendMetrics.securityDividends[Object.keys(analytics.dividendMetrics.securityDividends)[0]]?.projectedYield || 0) : '0.00%'}
+                </p>
               </CardContent>
             </Card>
             <Card>
@@ -192,6 +196,9 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
                 <div className="text-2xl font-bold">
                   {analytics ? portfolioAnalyticsService.formatCurrency(analytics.dividendMetrics.totalAnnualDividend) : '$0.00'}
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Projected: {analytics ? portfolioAnalyticsService.formatCurrency(analytics.dividendMetrics.securityDividends[Object.keys(analytics.dividendMetrics.securityDividends)[0]]?.projectedAnnualDividend || 0) : '$0.00'}
+                </p>
               </CardContent>
             </Card>
             <Card>
@@ -203,6 +210,9 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
                 <div className="text-2xl font-bold">
                   {analytics ? portfolioAnalyticsService.formatCurrency(analytics.dividendMetrics.totalMonthlyDividend) : '$0.00'}
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Projected: {analytics ? portfolioAnalyticsService.formatCurrency(analytics.dividendMetrics.securityDividends[Object.keys(analytics.dividendMetrics.securityDividends)[0]]?.projectedMonthlyDividend || 0) : '$0.00'}
+                </p>
               </CardContent>
             </Card>
           </div>

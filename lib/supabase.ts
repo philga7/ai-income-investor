@@ -33,6 +33,7 @@ export type Security = {
   yield: number;
   sma200: 'above' | 'below';
   tags: string[];
+  dividendGrowth5yr: number;
   created_at: string;
   updated_at: string;
 };
