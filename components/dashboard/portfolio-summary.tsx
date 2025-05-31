@@ -53,7 +53,7 @@ export function PortfolioSummary() {
                 <p className="text-2xl font-bold">3.85%</p>
               </div>
               <div className="flex items-center text-sm text-green-500">
-                <TrendingUp className="mr-1 h-4 w-4" />
+                <TrendingUp className="mr-1 h-4 w-4" data-testid="trending-up-icon" />
                 +0.2%
               </div>
             </div>
