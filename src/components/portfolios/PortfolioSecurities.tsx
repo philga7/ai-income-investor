@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { DeleteSecurityDialog } from './delete-security-dialog';
+import { portfolioAnalyticsService } from "@/src/services/portfolioAnalyticsService";
 
 interface PortfolioSecuritiesProps {
   securities: PortfolioSecurity[];
@@ -20,6 +21,15 @@ interface PortfolioSecuritiesProps {
 }
 
 export function PortfolioSecurities({ securities, portfolioId, onSecurityDeleted }: PortfolioSecuritiesProps) {
+  const analytics = portfolioAnalyticsService.calculatePortfolioAnalytics({
+    id: portfolioId,
+    name: '',
+    description: '',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    securities
+  });
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -34,6 +44,7 @@ export function PortfolioSecurities({ securities, portfolioId, onSecurityDeleted
             <TableHead className="text-right">Market Value</TableHead>
             <TableHead className="text-right">Gain/Loss</TableHead>
             <TableHead className="text-right">Yield</TableHead>
+            <TableHead className="text-right">Annual Income</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
@@ -43,6 +54,7 @@ export function PortfolioSecurities({ securities, portfolioId, onSecurityDeleted
             const costBasis = ps.shares * ps.average_cost;
             const gainLoss = marketValue - costBasis;
             const gainLossPercentage = (gainLoss / costBasis) * 100;
+            const securityDividend = analytics.dividendMetrics.securityDividends[ps.security.id];
 
             return (
               <TableRow key={ps.id}>
@@ -59,6 +71,9 @@ export function PortfolioSecurities({ securities, portfolioId, onSecurityDeleted
                   ${gainLoss.toLocaleString()} ({gainLossPercentage.toFixed(2)}%)
                 </TableCell>
                 <TableCell className="text-right">{ps.security.yield.toFixed(2)}%</TableCell>
+                <TableCell className="text-right">
+                  {portfolioAnalyticsService.formatCurrency(securityDividend.annualDividend)}
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
                     <Link href={`/portfolios/${portfolioId}/securities/${ps.id}/edit`}>

@@ -1,4 +1,5 @@
 import { Portfolio, PortfolioSecurity } from './portfolioService';
+import { DividendMetrics, dividendService } from './dividendService';
 
 export interface PortfolioValueMetrics {
   totalValue: number;
@@ -15,7 +16,19 @@ export interface PortfolioValueMetrics {
   };
 }
 
+export interface PortfolioAnalytics {
+  valueMetrics: PortfolioValueMetrics;
+  dividendMetrics: DividendMetrics;
+}
+
 export const portfolioAnalyticsService = {
+  calculatePortfolioAnalytics(portfolio: Portfolio): PortfolioAnalytics {
+    return {
+      valueMetrics: this.calculatePortfolioValue(portfolio),
+      dividendMetrics: dividendService.calculateDividendMetrics(portfolio),
+    };
+  },
+
   calculatePortfolioValue(portfolio: Portfolio): PortfolioValueMetrics {
     const securityValues: PortfolioValueMetrics['securityValues'] = {};
     let totalValue = 0;

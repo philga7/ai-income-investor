@@ -20,6 +20,7 @@ import { useAuth } from '@/lib/auth';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DeleteSecurityDialog } from "@/components/portfolios/delete-security-dialog";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { portfolioAnalyticsService } from "@/src/services/portfolioAnalyticsService";
 
 interface Portfolio {
   id: string;
@@ -59,6 +60,7 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
   const [securities, setSecurities] = useState<PortfolioSecurity[]>([]);
   const [loading, setLoading] = useState(!initialPortfolio);
   const { session } = useAuth();
+  const analytics = portfolio ? portfolioAnalyticsService.calculatePortfolioAnalytics(portfolio) : null;
 
   const fetchPortfolio = useCallback(async () => {
     if (!session?.access_token) {
@@ -166,44 +168,40 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  ${securities.reduce((sum, ps) => sum + ps.shares * ps.security.price, 0).toFixed(2)}
+                  {analytics ? portfolioAnalyticsService.formatCurrency(analytics.valueMetrics.totalValue) : '$0.00'}
                 </div>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Yield</CardTitle>
+                <CardTitle className="text-sm font-medium">Portfolio Yield</CardTitle>
                 <BarChart4 className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {securities.length > 0
-                    ? (securities.reduce((sum, ps) => sum + ps.security.yield * ps.shares * ps.security.price, 0) /
-                        securities.reduce((sum, ps) => sum + ps.shares * ps.security.price, 0)).toFixed(2)
-                    : '0.00'}%
+                  {analytics ? portfolioAnalyticsService.formatPercentage(analytics.dividendMetrics.portfolioYield) : '0.00%'}
                 </div>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Positions</CardTitle>
-                <PieChart className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{securities.length}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg. Cost</CardTitle>
+                <CardTitle className="text-sm font-medium">Annual Income</CardTitle>
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  ${securities.length > 0
-                    ? (securities.reduce((sum, ps) => sum + ps.average_cost * ps.shares, 0) /
-                        securities.reduce((sum, ps) => sum + ps.shares, 0)).toFixed(2)
-                    : '0.00'}
+                  {analytics ? portfolioAnalyticsService.formatCurrency(analytics.dividendMetrics.totalAnnualDividend) : '$0.00'}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Monthly Income</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {analytics ? portfolioAnalyticsService.formatCurrency(analytics.dividendMetrics.totalMonthlyDividend) : '$0.00'}
                 </div>
               </CardContent>
             </Card>

@@ -8,7 +8,8 @@ module.exports = {
     '^@/lib/(.*)$': '<rootDir>/lib/$1',
     '^@/app/(.*)$': '<rootDir>/app/$1',
     '^@/services/(.*)$': '<rootDir>/src/services/$1',
-    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@/src/(.*)$': '<rootDir>/src/$1',
+    '^@/(.*)$': '<rootDir>/$1'
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   transform: {
