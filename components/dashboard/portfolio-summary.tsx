@@ -13,7 +13,7 @@ export function PortfolioSummary() {
           <CardTitle>Portfolio Summary</CardTitle>
           <CardDescription>Your investment overview</CardDescription>
         </div>
-        <DollarSign className="h-5 w-5 text-muted-foreground" />
+        <DollarSign className="h-5 w-5 text-muted-foreground" data-testid="dollar-sign-icon" />
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="value">
@@ -29,7 +29,7 @@ export function PortfolioSummary() {
                 <p className="text-2xl font-bold">$124,389.52</p>
               </div>
               <div className="flex items-center text-sm text-green-500">
-                <TrendingUp className="mr-1 h-4 w-4" />
+                <TrendingUp className="mr-1 h-4 w-4" data-testid="trending-up-icon" />
                 +2.5%
               </div>
             </div>
@@ -53,7 +53,7 @@ export function PortfolioSummary() {
                 <p className="text-2xl font-bold">3.85%</p>
               </div>
               <div className="flex items-center text-sm text-green-500">
-                <TrendingUp className="mr-1 h-4 w-4" />
+                <TrendingUp className="mr-1 h-4 w-4" data-testid="trending-up-icon" />
                 +0.2%
               </div>
             </div>
@@ -74,7 +74,7 @@ export function PortfolioSummary() {
                 <p className="text-sm font-medium text-muted-foreground">Annual Income</p>
                 <p className="text-2xl font-bold">$4,789.25</p>
               </div>
-              <Calculator className="h-5 w-5 text-muted-foreground" />
+              <Calculator className="h-5 w-5 text-muted-foreground" data-testid="calculator-icon" />
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
