@@ -1,3 +1,12 @@
+-- Create common functions
+CREATE OR REPLACE FUNCTION public.update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = timezone('utc'::text, now());
+    RETURN NEW;
+END;
+$$ language 'plpgsql' SECURITY DEFINER;
+
 -- Create profiles table
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID REFERENCES auth.users(id) PRIMARY KEY,
@@ -47,4 +56,10 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 -- Create trigger for new user creation
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user(); 
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Create trigger for updated_at on profiles
+CREATE TRIGGER update_profiles_updated_at
+    BEFORE UPDATE ON public.profiles
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_updated_at_column(); 

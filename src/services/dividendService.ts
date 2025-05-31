@@ -1,4 +1,5 @@
 import { Portfolio, PortfolioSecurity } from './portfolioService';
+import { supabase } from '@/lib/supabase';
 
 export interface DividendMetrics {
   totalAnnualDividend: number;
@@ -14,6 +15,8 @@ export interface DividendMetrics {
       projectedAnnualDividend?: number;
       projectedMonthlyDividend?: number;
       projectedYield?: number;
+      nextExDate?: string;
+      nextPaymentDate?: string;
     };
   };
 }
@@ -125,4 +128,56 @@ export const dividendService = {
       maximumFractionDigits: 2,
     }).format(value / 100);
   },
+
+  async getUpcomingDividends(portfolio: Portfolio) {
+    const today = new Date();
+    const { data: dividends, error } = await supabase
+      .from('dividends')
+      .select('*')
+      .in('security_id', portfolio.securities.map(s => s.security.id))
+      .gte('ex_date', today.toISOString())
+      .order('ex_date', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching upcoming dividends:', error);
+      return [];
+    }
+
+    return dividends;
+  },
+
+  async getNextDividendDates(securityId: string) {
+    const today = new Date();
+    const { data: dividends, error } = await supabase
+      .from('dividends')
+      .select('*')
+      .eq('security_id', securityId)
+      .gte('ex_date', today.toISOString())
+      .order('ex_date', { ascending: true })
+      .limit(1);
+
+    if (error) {
+      console.error('Error fetching next dividend dates:', error);
+      return null;
+    }
+
+    return dividends?.[0] || null;
+  },
+
+  async updateDividendDates(securityId: string, exDate: string, paymentDate: string) {
+    const { error } = await supabase
+      .from('dividends')
+      .upsert({
+        security_id: securityId,
+        ex_date: exDate,
+        payment_date: paymentDate,
+        amount: 0, // This will be updated when the dividend amount is known
+        updated_at: new Date().toISOString()
+      });
+
+    if (error) {
+      console.error('Error updating dividend dates:', error);
+      throw error;
+    }
+  }
 }; 

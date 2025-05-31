@@ -472,3 +472,45 @@ alwaysApply: true
   - Document breaking changes
 
 Follow WINDSURF_RULES for proper rule formatting and structure of windsurf rule sections.
+
+---
+NEXTJS_TYPING
+---
+description: Next.js 15 typing rules for page components and route handlers
+globs: app/**/*.tsx,app/**/*.ts
+filesToApplyRule: app/**/*.tsx,app/**/*.ts
+alwaysApply: true
+---
+
+- **Page Component Props Typing**
+  - In Next.js 15, both `params` and `searchParams` are now Promises
+  - Page component props must be typed as:
+    ```typescript
+    type Props = {
+      params: Promise<{ [key: string]: string }>;
+      searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+    }
+    ```
+  - Always await both params and searchParams in the component:
+    ```typescript
+    export default async function Page({ params, searchParams }: Props) {
+      const resolvedParams = await params;
+      const resolvedSearchParams = await searchParams;
+      // Use resolvedParams and resolvedSearchParams
+    }
+    ```
+  - This applies to all page components in the app directory
+  - Route handlers should also follow this Promise-based typing pattern
+
+- **Static Generation with generateStaticParams**
+  - When using `generateStaticParams`, the returned params must match the Promise type
+  - Example:
+    ```typescript
+    export function generateStaticParams() {
+      return [
+        { id: '1' },
+        { id: '2' }
+      ];
+    }
+    ```
+  - The params will be automatically wrapped in a Promise by Next.js
