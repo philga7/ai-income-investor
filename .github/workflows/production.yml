@@ -20,6 +20,15 @@ jobs:
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v4
+      
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -38,6 +47,14 @@ jobs:
       - name: Configure Git
         run: |
           git config --global --add safe.directory /__w/ai-income-investor/ai-income-investor
+
+      - name: Cache Vercel build
+        uses: actions/cache@v3
+        with:
+          path: .vercel
+          key: ${{ runner.os }}-vercel-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-vercel-
 
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
