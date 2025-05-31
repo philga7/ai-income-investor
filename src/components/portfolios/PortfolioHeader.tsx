@@ -1,7 +1,9 @@
 import { Portfolio } from '@/services/portfolioService';
+import { portfolioAnalyticsService } from '@/services/portfolioAnalyticsService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EditPortfolioDialog } from '@/components/portfolios/edit-portfolio-dialog';
 import { DeletePortfolioDialog } from '@/components/portfolios/delete-portfolio-dialog';
+import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 interface PortfolioHeaderProps {
   portfolio: Portfolio;
@@ -9,6 +11,8 @@ interface PortfolioHeaderProps {
 }
 
 export function PortfolioHeader({ portfolio, onPortfolioUpdated }: PortfolioHeaderProps) {
+  const metrics = portfolioAnalyticsService.calculatePortfolioValue(portfolio);
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -30,26 +34,32 @@ export function PortfolioHeader({ portfolio, onPortfolioUpdated }: PortfolioHead
           <div>
             <p className="text-sm font-medium text-muted-foreground">Total Value</p>
             <p className="text-2xl font-bold">
-              ${portfolio.securities.reduce((total, ps) => 
-                total + (ps.shares * ps.security.price), 0
-              ).toLocaleString()}
+              {portfolioAnalyticsService.formatCurrency(metrics.totalValue)}
             </p>
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground">Total Cost</p>
             <p className="text-2xl font-bold">
-              ${portfolio.securities.reduce((total, ps) => 
-                total + (ps.shares * ps.average_cost), 0
-              ).toLocaleString()}
+              {portfolioAnalyticsService.formatCurrency(metrics.totalCost)}
             </p>
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground">Total Gain/Loss</p>
-            <p className="text-2xl font-bold">
-              ${portfolio.securities.reduce((total, ps) => 
-                total + (ps.shares * (ps.security.price - ps.average_cost)), 0
-              ).toLocaleString()}
-            </p>
+            <div className="flex items-center">
+              <p className="text-2xl font-bold">
+                {portfolioAnalyticsService.formatCurrency(metrics.totalGainLoss)}
+              </p>
+              <span className={`ml-2 ${metrics.totalGainLoss >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {metrics.totalGainLoss >= 0 ? (
+                  <ArrowUpRight className="h-5 w-5" />
+                ) : (
+                  <ArrowDownRight className="h-5 w-5" />
+                )}
+              </span>
+              <span className={`ml-1 text-sm ${metrics.totalGainLoss >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                {portfolioAnalyticsService.formatPercentage(metrics.totalGainLossPercentage)}
+              </span>
+            </div>
           </div>
         </div>
       </CardContent>
