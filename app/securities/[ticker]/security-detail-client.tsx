@@ -21,7 +21,7 @@ import { DividendHistory } from "@/components/securities/dividend-history";
 import { useState, useEffect } from "react";
 import { dividendService } from "@/services/dividendService";
 import { supabase } from "@/lib/supabase";
-import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { BreadcrumbNav } from '@/components/ui/breadcrumb';
 
 interface Security {
   id: string;
@@ -110,7 +110,7 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
   
   return (
     <div className="space-y-6">
-      <Breadcrumb items={[
+      <BreadcrumbNav items={[
         { label: 'Securities', href: '/securities' },
         { label: ticker, href: `/securities/${ticker}` }
       ]} />

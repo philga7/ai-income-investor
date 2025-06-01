@@ -7,6 +7,7 @@ import { portfolioAnalyticsService } from "@/src/services/portfolioAnalyticsServ
 import { PortfolioPerformance } from "@/components/portfolios/PortfolioPerformance";
 import { PortfolioSecurities } from "@/components/portfolios/PortfolioSecurities";
 import { PortfolioHeader } from "@/components/portfolios/PortfolioHeader";
+import { BreadcrumbNav } from '@/components/ui/breadcrumb';
 
 interface Portfolio {
   id: string;
@@ -128,6 +129,10 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
 
   return (
     <div className="space-y-6">
+      <BreadcrumbNav items={[
+        { label: 'Portfolios', href: '/portfolios' },
+        { label: portfolio.name, href: `/portfolios/${portfolio.id}` }
+      ]} />
       <PortfolioHeader portfolio={portfolio} onPortfolioUpdated={handlePortfolioUpdated} />
       <PortfolioPerformance portfolio={portfolio} />
       <PortfolioSecurities
