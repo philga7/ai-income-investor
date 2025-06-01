@@ -13,7 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { SecurityChart } from '@/components/securities/security-chart';
 import { TechnicalIndicators } from '@/components/securities/technical-indicators';
 import { DividendHistory } from '@/components/securities/dividend-history';
-import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { BreadcrumbNav } from '@/components/ui/breadcrumb';
 
 interface SecurityDetailPageProps {
   params: Promise<{ id: string; securityId: string }>;
@@ -94,7 +94,7 @@ export default function SecurityDetailPage({ params }: SecurityDetailPageProps) 
   return (
     <ProtectedRoute>
       <div className="space-y-6">
-        <Breadcrumb items={[
+        <BreadcrumbNav items={[
           { label: 'Portfolios', href: '/portfolios' },
           { label: 'Portfolio Details', href: `/portfolios/${portfolioId}` },
           { label: security.security.ticker, href: `/portfolios/${portfolioId}/securities/${securityId}` }

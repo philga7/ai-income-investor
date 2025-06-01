@@ -2,7 +2,7 @@ module.exports = {
   testEnvironment: 'jsdom',
   moduleNameMapper: {
     '^@/components/ui/(.*)$': '<rootDir>/components/ui/$1',
-    '^@/components/portfolios/(.*)$': '<rootDir>/src/components/portfolios/$1',
+    '^@/components/portfolios/(.*)$': '<rootDir>/components/portfolios/$1',
     '^@/components/(.*)$': '<rootDir>/components/$1',
     '^@/__tests__/(.*)$': '<rootDir>/__tests__/$1',
     '^@/lib/(.*)$': '<rootDir>/lib/$1',

@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
-import { ChevronRight, MoreHorizontal } from 'lucide-react';
+import { ChevronRight, MoreHorizontal, Home } from 'lucide-react';
+import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
 
@@ -19,7 +20,7 @@ const BreadcrumbList = React.forwardRef<
   <ol
     ref={ref}
     className={cn(
-      'flex flex-wrap items-center gap-1.5 break-words text-sm text-muted-foreground sm:gap-2.5',
+      'flex flex-wrap items-center gap-1 break-words text-sm text-muted-foreground sm:gap-1.5',
       className
     )}
     {...props}
@@ -33,7 +34,7 @@ const BreadcrumbItem = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <li
     ref={ref}
-    className={cn('inline-flex items-center gap-1.5', className)}
+    className={cn('inline-flex items-center gap-1', className)}
     {...props}
   />
 ));
@@ -80,7 +81,7 @@ const BreadcrumbSeparator = ({
   <li
     role="presentation"
     aria-hidden="true"
-    className={cn('[&>svg]:size-3.5', className)}
+    className={cn('[&>svg]:size-3', className)}
     {...props}
   >
     {children ?? <ChevronRight />}
@@ -104,6 +105,47 @@ const BreadcrumbEllipsis = ({
 );
 BreadcrumbEllipsis.displayName = 'BreadcrumbElipssis';
 
+interface BreadcrumbItem {
+  label: string;
+  href: string;
+}
+
+interface BreadcrumbNavProps {
+  items: BreadcrumbItem[];
+}
+
+const BreadcrumbNav = ({ items }: BreadcrumbNavProps) => {
+  return (
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink asChild>
+            <Link href="/">
+              <Home className="h-4 w-4" />
+              <span className="sr-only">Home</span>
+            </Link>
+          </BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        {items.map((item, index) => (
+          <React.Fragment key={item.href}>
+            <BreadcrumbItem>
+              {index === items.length - 1 ? (
+                <BreadcrumbPage>{item.label}</BreadcrumbPage>
+              ) : (
+                <BreadcrumbLink asChild>
+                  <Link href={item.href}>{item.label}</Link>
+                </BreadcrumbLink>
+              )}
+            </BreadcrumbItem>
+            {index < items.length - 1 && <BreadcrumbSeparator />}
+          </React.Fragment>
+        ))}
+      </BreadcrumbList>
+    </Breadcrumb>
+  );
+};
+
 export {
   Breadcrumb,
   BreadcrumbList,
@@ -112,4 +154,5 @@ export {
   BreadcrumbPage,
   BreadcrumbSeparator,
   BreadcrumbEllipsis,
+  BreadcrumbNav,
 };

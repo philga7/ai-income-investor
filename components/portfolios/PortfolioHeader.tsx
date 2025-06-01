@@ -7,7 +7,7 @@ import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 interface PortfolioHeaderProps {
   portfolio: Portfolio;
-  onPortfolioUpdated?: () => void;
+  onPortfolioUpdated: () => void;
 }
 
 export function PortfolioHeader({ portfolio, onPortfolioUpdated }: PortfolioHeaderProps) {
