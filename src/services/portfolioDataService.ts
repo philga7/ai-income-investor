@@ -128,15 +128,30 @@ export const portfolioDataService = {
                 sma200: (price?.regularMarketPrice || 0) > (summaryDetail?.twoHundredDayAverage || 0) ? 'above' : 'below',
                 day_low: price?.regularMarketDayLow || 0,
                 day_high: price?.regularMarketDayHigh || 0,
-                fifty_two_week_low: price?.regularMarketDayLow || 0, // Using day low as fallback
-                fifty_two_week_high: price?.regularMarketDayHigh || 0, // Using day high as fallback
-                average_volume: price?.regularMarketVolume || 0, // Using regular volume as fallback
+                fifty_two_week_low: price?.regularMarketDayLow || 0,
+                fifty_two_week_high: price?.regularMarketDayHigh || 0,
+                average_volume: summaryDetail?.averageVolume || 0,
                 forward_pe: summaryDetail?.forwardPE || 0,
                 price_to_sales_trailing_12_months: summaryDetail?.priceToSalesTrailing12Months || 0,
                 beta: summaryDetail?.beta || 0,
-                fifty_day_average: price?.regularMarketPrice || 0, // Using current price as fallback
+                fifty_day_average: summaryDetail?.fiftyDayAverage || 0,
                 two_hundred_day_average: summaryDetail?.twoHundredDayAverage || 0,
-                ex_dividend_date: summaryDetail?.exDividendDate ? new Date(summaryDetail.exDividendDate).toISOString() : '',
+                ex_dividend_date: summaryDetail?.exDividendDate ? new Date(summaryDetail.exDividendDate * 1000).toISOString() : null,
+                // Add financial data fields
+                target_low_price: quoteSummary.financialData?.targetLowPrice || 0,
+                target_high_price: quoteSummary.financialData?.targetHighPrice || 0,
+                recommendation_key: quoteSummary.financialData?.recommendationKey || null,
+                number_of_analyst_opinions: quoteSummary.financialData?.numberOfAnalystOpinions || 0,
+                total_cash: quoteSummary.financialData?.totalCash || 0,
+                total_debt: quoteSummary.financialData?.totalDebt || 0,
+                current_ratio: quoteSummary.financialData?.currentRatio || 0,
+                quick_ratio: quoteSummary.financialData?.quickRatio || 0,
+                debt_to_equity: quoteSummary.financialData?.debtToEquity || 0,
+                return_on_equity: quoteSummary.financialData?.returnOnEquity || 0,
+                profit_margins: quoteSummary.financialData?.profitMargins || 0,
+                operating_margins: quoteSummary.financialData?.operatingMargins || 0,
+                revenue_growth: quoteSummary.financialData?.revenueGrowth || 0,
+                earnings_growth: quoteSummary.financialData?.earningsGrowth || 0,
                 last_fetched: new Date().toISOString()
               })
               .eq('ticker', ps.security.ticker)
