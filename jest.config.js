@@ -5,11 +5,11 @@ module.exports = {
     '^@/components/portfolios/(.*)$': '<rootDir>/components/portfolios/$1',
     '^@/components/(.*)$': '<rootDir>/components/$1',
     '^@/__tests__/(.*)$': '<rootDir>/__tests__/$1',
-    '^@/lib/(.*)$': '<rootDir>/lib/$1',
+    '^@/lib/(.*)$': ['<rootDir>/src/lib/$1', '<rootDir>/lib/$1'],
     '^@/app/(.*)$': '<rootDir>/app/$1',
     '^@/services/(.*)$': '<rootDir>/src/services/$1',
     '^@/src/(.*)$': '<rootDir>/src/$1',
-    '^@/(.*)$': '<rootDir>/$1'
+    '^@/(.*)$': ['<rootDir>/src/$1', '<rootDir>/$1']
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   transform: {
