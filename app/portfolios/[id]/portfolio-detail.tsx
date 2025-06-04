@@ -4,39 +4,12 @@ import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { useAuth } from '@/lib/auth';
 import { portfolioAnalyticsService } from "@/src/services/portfolioAnalyticsService";
+import { portfolioDataService } from "@/src/services/portfolioDataService";
 import { PortfolioPerformance } from "@/components/portfolios/PortfolioPerformance";
 import { PortfolioSecurities } from "@/components/portfolios/PortfolioSecurities";
 import { PortfolioHeader } from "@/components/portfolios/PortfolioHeader";
 import { BreadcrumbNav } from '@/components/ui/breadcrumb';
-
-interface Portfolio {
-  id: string;
-  name: string;
-  description: string | null;
-  created_at: string;
-  updated_at: string;
-  user_id: string;
-  securities: PortfolioSecurity[];
-}
-
-interface PortfolioSecurity {
-  id: string;
-  portfolio_id: string;
-  security_id: string;
-  shares: number;
-  average_cost: number;
-  security: {
-    id: string;
-    ticker: string;
-    name: string;
-    sector: string;
-    price: number;
-    yield: number;
-    sma200: "above" | "below";
-    tags: string[];
-    dividendGrowth5yr: number;
-  };
-}
+import { Portfolio, PortfolioSecurity } from "@/services/portfolioService";
 
 interface PortfolioDetailProps {
   portfolioId: string;
@@ -85,19 +58,10 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
     }
 
     try {
-      const response = await fetch(`/api/portfolios/${portfolioId}/securities`, {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to fetch securities');
-      }
-
-      const data = await response.json();
-      setSecurities(data);
+      // Use the new portfolioDataService to fetch and update securities
+      const updatedSecurities = await portfolioDataService.updatePortfolioSecurities(portfolioId);
+      setSecurities(updatedSecurities);
+      setPortfolio(prev => prev ? { ...prev, securities: updatedSecurities } : null);
     } catch (error) {
       console.error('Error fetching securities:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to fetch securities');
@@ -109,6 +73,11 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
       fetchPortfolio();
     }
     fetchSecurities();
+
+    // Set up an interval to refresh securities data every 5 minutes
+    const refreshInterval = setInterval(fetchSecurities, 5 * 60 * 1000);
+
+    return () => clearInterval(refreshInterval);
   }, [initialPortfolio, fetchPortfolio, fetchSecurities]);
 
   const handlePortfolioUpdated = () => {

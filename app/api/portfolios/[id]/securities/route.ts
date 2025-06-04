@@ -114,10 +114,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
+    console.log('POST /api/portfolios/[id]/securities - Starting request');
     const { id } = await params;
     const authHeader = request.headers.get('Authorization');
 
     if (!authHeader?.startsWith('Bearer ')) {
+      console.log('POST /api/portfolios/[id]/securities - No auth token');
       return NextResponse.json(
         { error: 'Unauthorized - No token provided' },
         { status: 401 }
@@ -141,7 +143,7 @@ export async function POST(
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError) {
-      console.error('Error verifying token:', userError);
+      console.log('POST /api/portfolios/[id]/securities - Auth error:', userError);
       return NextResponse.json(
         { error: 'Unauthorized - Invalid token' },
         { status: 401 }
@@ -149,6 +151,7 @@ export async function POST(
     }
 
     if (!user) {
+      console.log('POST /api/portfolios/[id]/securities - No user found');
       return NextResponse.json(
         { error: 'Unauthorized - No user found' },
         { status: 401 }
@@ -177,10 +180,14 @@ export async function POST(
       );
     }
 
+    // Get request body
     const body = await request.json();
     const { ticker, shares, average_cost } = body;
 
+    console.log('POST /api/portfolios/[id]/securities - Request body:', { ticker, shares, average_cost });
+
     if (!ticker || !shares || !average_cost) {
+      console.log('POST /api/portfolios/[id]/securities - Missing required fields');
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -194,10 +201,14 @@ export async function POST(
       .eq('ticker', ticker)
       .single();
 
+    console.log('POST /api/portfolios/[id]/securities - Existing security check:', { security, securityError });
+
     // If security doesn't exist, create it
     if (securityError) {
+      console.log('POST /api/portfolios/[id]/securities - Creating new security');
       // Get real-time security data
       const securityData = await securityService.getSecurityData(ticker);
+      console.log('POST /api/portfolios/[id]/securities - Got security data:', securityData);
 
       // Create a new security with real-time data
       const { data: newSecurity, error: createSecurityError } = await supabase
@@ -215,6 +226,8 @@ export async function POST(
         ])
         .select()
         .single();
+
+      console.log('POST /api/portfolios/[id]/securities - Created new security:', { newSecurity, createSecurityError });
 
       if (createSecurityError) {
         console.error('API: Error creating security:', createSecurityError);
@@ -238,6 +251,8 @@ export async function POST(
           .eq('ticker', ticker)
           .single();
 
+        console.log('POST /api/portfolios/[id]/securities - Fetched new security:', { fetchedSecurity, fetchError });
+
         if (fetchError || !fetchedSecurity) {
           console.error('API: Failed to fetch newly created security:', fetchError);
           return NextResponse.json(
@@ -251,8 +266,10 @@ export async function POST(
         security = newSecurity;
       }
     } else {
+      console.log('POST /api/portfolios/[id]/securities - Updating existing security');
       // Update existing security with real-time data
       const updatedSecurity = await securityService.updateSecurityData(security.id);
+      console.log('POST /api/portfolios/[id]/securities - Updated security:', updatedSecurity);
       if (updatedSecurity) {
         security = updatedSecurity;
       }

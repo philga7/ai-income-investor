@@ -22,6 +22,8 @@ import { useState, useEffect } from "react";
 import { dividendService } from "@/services/dividendService";
 import { supabase } from "@/lib/supabase";
 import { BreadcrumbNav } from '@/components/ui/breadcrumb';
+import { yahooFinanceClient } from '@/lib/financial/api/yahoo/client';
+import { toast } from 'sonner';
 
 interface Security {
   id: string;
@@ -38,7 +40,7 @@ interface Security {
   eps: number;
   dividend: number;
   yield: number;
-  dividendGrowth5yr: number;
+  dividend_growth_5yr: number;
   payoutRatio: number;
   sma200: string;
 }
@@ -55,20 +57,76 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
   useEffect(() => {
     async function loadData() {
       try {
-        // Fetch security data from the database
-        const { data: securityData, error } = await supabase
-          .from('securities')
-          .select('*')
-          .eq('ticker', ticker)
-          .single();
-
-        if (error) {
-          console.error('Error fetching security data:', error);
+        // Get the current session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          toast.error('Please sign in to view security details');
           return;
         }
 
-        if (!securityData) {
-          console.error('Security not found');
+        // First fetch from our API endpoint
+        const response = await fetch(`/api/securities/${ticker}`, {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch security data');
+        }
+        const quoteSummary = await response.json();
+        
+        if (!quoteSummary) {
+          console.error('No data returned from API for ticker:', ticker);
+          return;
+        }
+
+        // Extract relevant data from quote summary
+        const price = quoteSummary.price?.regularMarketPrice || 0;
+        const prevClose = quoteSummary.price?.regularMarketPreviousClose || 0;
+        const open = quoteSummary.price?.regularMarketOpen || 0;
+        const volume = quoteSummary.price?.regularMarketVolume || 0;
+        const marketCap = quoteSummary.price?.marketCap || 0;
+        const pe = quoteSummary.summaryDetail?.trailingPE || 0;
+        const eps = quoteSummary.summaryDetail?.trailingPE || 0;
+        const dividend = quoteSummary.summaryDetail?.dividendRate || 0;
+        const dividendYield = (quoteSummary.summaryDetail?.dividendYield || 0) * 100;
+        const dividend_growth_5yr = quoteSummary.summaryDetail?.fiveYearAvgDividendYield || 0;
+        const payoutRatio = quoteSummary.summaryDetail?.payoutRatio || 0;
+        const sma200 = price > (quoteSummary.summaryDetail?.twoHundredDayAverage || 0) ? 'above' : 'below';
+
+        // Update or insert into database
+        const { data: securityData, error } = await supabase
+          .from('securities')
+          .upsert({
+            ticker,
+            name: quoteSummary.price?.longName || quoteSummary.price?.shortName || ticker,
+            sector: quoteSummary.assetProfile?.sector || 'Unknown',
+            industry: quoteSummary.assetProfile?.industry || 'Unknown',
+            price,
+            prev_close: prevClose,
+            open,
+            volume,
+            market_cap: marketCap,
+            pe,
+            eps,
+            dividend,
+            yield: dividendYield,
+            dividend_growth_5yr,
+            payout_ratio: payoutRatio,
+            sma200,
+            last_fetched: new Date().toISOString()
+          }, {
+            onConflict: 'ticker',
+            ignoreDuplicates: false
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Error updating security data:', error);
+          toast.error('Failed to update security data');
           return;
         }
 
@@ -85,6 +143,7 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
         }
       } catch (error) {
         console.error('Error loading security data:', error);
+        toast.error('Failed to load security data');
       } finally {
         setLoading(false);
       }
@@ -225,7 +284,7 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
             </div>
             <div>
               <p className="text-muted-foreground">5yr Growth</p>
-              <p className="font-medium">{security.dividendGrowth5yr?.toFixed(1) ?? 'N/A'}%</p>
+              <p className="font-medium">{security.dividend_growth_5yr?.toFixed(1) ?? 'N/A'}%</p>
             </div>
           </CardContent>
         </Card>

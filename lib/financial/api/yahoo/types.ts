@@ -108,6 +108,9 @@ export interface Price {
   marketCap?: number;
   regularMarketPreviousClose?: number;
   regularMarketOpen?: number;
+  shortName?: string;
+  longName?: string;
+  symbol?: string;
 }
 
 export interface SummaryDetail {

@@ -7,6 +7,7 @@ import { DividendTimeline } from '@/components/dashboard/dividend-timeline';
 import { RecommendedStocks } from '@/components/dashboard/recommended-stocks';
 import { MarketOverview } from '@/components/dashboard/market-overview';
 import { DividendNews } from '@/components/dashboard/dividend-news';
+import { PriceDataTest } from '@/components/PriceDataTest';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
@@ -64,6 +65,10 @@ export default function Home() {
         <div className="grid gap-6 md:grid-cols-2">
           <RecommendedStocks />
           <DividendNews />
+        </div>
+
+        <div className="grid gap-6">
+          <PriceDataTest />
         </div>
       </div>
     </ProtectedRoute>
