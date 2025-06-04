@@ -50,7 +50,7 @@ export const dividendService = {
       const contributionToPortfolioYield = (annualDividend / marketValue) * 100;
 
       // Calculate projected dividends based on historical growth rate
-      const growthRate = security.security.dividendGrowth5yr || 0;
+      const growthRate = security.security.dividend_growth_5yr || 0;
       const projectedAnnualDividend = annualDividend * (1 + growthRate / 100);
       const projectedMonthlyDividend = projectedAnnualDividend / 12;
       const projectedYield = (projectedAnnualDividend / marketValue) * 100;
@@ -87,7 +87,7 @@ export const dividendService = {
     portfolio.securities.forEach((security) => {
       const marketValue = security.shares * security.security.price;
       const currentAnnualDividend = marketValue * (security.security.yield / 100);
-      const growthRate = security.security.dividendGrowth5yr || 0;
+      const growthRate = security.security.dividend_growth_5yr || 0;
       
       const projectedAnnualDividend = currentAnnualDividend * (1 + growthRate / 100);
       const projectedMonthlyDividend = projectedAnnualDividend / 12;

@@ -29,13 +29,23 @@ export type Security = {
   ticker: string;
   name: string;
   sector: string;
+  industry: string;
   price: number;
+  prev_close: number;
+  open: number;
+  volume: number;
+  market_cap: number;
+  pe: number;
+  eps: number;
+  dividend: number;
   yield: number;
+  dividend_growth_5yr: number;
+  payout_ratio: number;
   sma200: 'above' | 'below';
   tags: string[];
-  dividendGrowth5yr: number;
   created_at: string;
   updated_at: string;
+  last_fetched: string;
 };
 
 export type PortfolioSecurity = {

@@ -34,7 +34,7 @@ interface PortfolioSecurity {
     yield: number;
     sma200: "above" | "below";
     tags: string[];
-    dividendGrowth5yr: number;
+    dividend_growth_5yr: number;
   };
 }
 
@@ -202,28 +202,28 @@ export default function SecurityDetailPage({ params }: SecurityDetailPageProps) 
                 <p className="text-muted-foreground">Annual Dividend</p>
                 <p className="font-medium">${(security.security.price * security.security.yield / 100).toFixed(2)}</p>
                 <p className="text-xs text-muted-foreground">
-                  Projected: ${(security.security.price * security.security.yield / 100 * (1 + security.security.dividendGrowth5yr / 100)).toFixed(2)}
+                  Projected: ${(security.security.price * security.security.yield / 100 * (1 + security.security.dividend_growth_5yr / 100)).toFixed(2)}
                 </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Yield</p>
                 <p className="font-medium">{security.security.yield.toFixed(2)}%</p>
                 <p className="text-xs text-muted-foreground">
-                  Projected: {(security.security.yield * (1 + security.security.dividendGrowth5yr / 100)).toFixed(2)}%
+                  Projected: {(security.security.yield * (1 + security.security.dividend_growth_5yr / 100)).toFixed(2)}%
                 </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Annual Income</p>
                 <p className="font-medium">${(marketValue * security.security.yield / 100).toFixed(2)}</p>
                 <p className="text-xs text-muted-foreground">
-                  Projected: ${(marketValue * security.security.yield / 100 * (1 + security.security.dividendGrowth5yr / 100)).toFixed(2)}
+                  Projected: ${(marketValue * security.security.yield / 100 * (1 + security.security.dividend_growth_5yr / 100)).toFixed(2)}
                 </p>
               </div>
               <div>
                 <p className="text-muted-foreground">Monthly Income</p>
                 <p className="font-medium">${(marketValue * security.security.yield / 100 / 12).toFixed(2)}</p>
                 <p className="text-xs text-muted-foreground">
-                  Projected: ${(marketValue * security.security.yield / 100 * (1 + security.security.dividendGrowth5yr / 100) / 12).toFixed(2)}
+                  Projected: ${(marketValue * security.security.yield / 100 * (1 + security.security.dividend_growth_5yr / 100) / 12).toFixed(2)}
                 </p>
               </div>
             </CardContent>

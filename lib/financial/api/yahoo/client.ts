@@ -114,14 +114,21 @@ class YahooFinanceClient {
     symbol: string,
     modules: readonly YahooFinanceModule[] = YAHOO_FINANCE_CONFIG.defaultModules
   ): Promise<QuoteSummary> {
+    console.log('YahooFinanceClient: Getting quote summary for', symbol);
     const cacheKey = `quote_summary_${symbol}_${modules.join('_')}`;
     const cachedData = this.getCachedData<QuoteSummary>(cacheKey);
-    if (cachedData) return cachedData;
+    if (cachedData) {
+      console.log('YahooFinanceClient: Using cached data for', symbol);
+      return cachedData;
+    }
 
     try {
+      console.log('YahooFinanceClient: Making API call for', symbol);
       const result = await yahooFinance.quoteSummary(symbol, {
         modules: [...modules],
       });
+
+      console.log('YahooFinanceClient: Got raw result for', symbol, result);
 
       // Transform the result to match our QuoteSummary type
       const transformedResult: QuoteSummary = {
@@ -143,9 +150,12 @@ class YahooFinanceClient {
         summaryDetail: result.summaryDetail ? this.transformSummaryDetail(result.summaryDetail) : undefined,
       };
 
+      console.log('YahooFinanceClient: Transformed result for', symbol, transformedResult);
+
       this.setCachedData(cacheKey, transformedResult);
       return transformedResult;
     } catch (error) {
+      console.error('YahooFinanceClient: Error getting quote summary for', symbol, error);
       const yahooError = error as YahooFinanceError;
       throw new Error(yahooError.message || YAHOO_FINANCE_CONFIG.errorMessages.serverError);
     }

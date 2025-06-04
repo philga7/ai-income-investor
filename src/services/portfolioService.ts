@@ -9,7 +9,7 @@ export interface Security {
   yield: number;
   sma200: 'above' | 'below';
   tags: string[];
-  dividendGrowth5yr: number;
+  dividend_growth_5yr: number;
 }
 
 export interface PortfolioSecurity {
