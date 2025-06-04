@@ -1,99 +1,178 @@
 import { supabase } from '@/lib/supabase';
 import { handleYahooFinanceError } from '@/src/lib/financial/api/errors';
-import { Portfolio, PortfolioSecurity } from './portfolioService';
+import { Portfolio, PortfolioSecurity, Security } from './portfolioService';
+import { financialService } from './financialService';
+import { QuoteSummary } from '@/lib/financial/api/yahoo/types';
+
+interface DatabaseSecurity {
+  id: string;
+  ticker: string;
+  name: string;
+  sector: string;
+  industry: string;
+  price: number;
+  prev_close: number;
+  open: number;
+  volume: number;
+  market_cap: number;
+  pe: number;
+  eps: number;
+  dividend: number;
+  yield: number;
+  dividend_growth_5yr: number;
+  payout_ratio: number;
+  sma200: 'above' | 'below';
+  tags: string[];
+  day_low: number;
+  day_high: number;
+  fifty_two_week_low: number;
+  fifty_two_week_high: number;
+  average_volume: number;
+  forward_pe: number;
+  price_to_sales_trailing_12_months: number;
+  beta: number;
+  fifty_day_average: number;
+  two_hundred_day_average: number;
+  ex_dividend_date: string;
+  last_fetched: string;
+}
+
+interface PortfolioSecurityRecord {
+  id: string;
+  security_id: string;
+  shares: number;
+  average_cost: number;
+  security: DatabaseSecurity;
+}
 
 export const portfolioDataService = {
   async updatePortfolioSecurities(portfolioId: string): Promise<PortfolioSecurity[]> {
     try {
-      // First, get the portfolio securities from the database
-      const { data: securities, error: securitiesError } = await supabase
+      // Fetch portfolio securities from the database
+      const { data: portfolioSecurities, error: fetchError } = await supabase
         .from('portfolio_securities')
         .select(`
-          *,
-          security:securities(*)
+          id,
+          security_id,
+          shares,
+          average_cost,
+          security:securities (
+            id,
+            ticker,
+            name,
+            sector,
+            industry,
+            price,
+            prev_close,
+            open,
+            volume,
+            market_cap,
+            pe,
+            eps,
+            dividend,
+            yield,
+            dividend_growth_5yr,
+            payout_ratio,
+            sma200,
+            tags,
+            day_low,
+            day_high,
+            fifty_two_week_low,
+            fifty_two_week_high,
+            average_volume,
+            forward_pe,
+            price_to_sales_trailing_12_months,
+            beta,
+            fifty_day_average,
+            two_hundred_day_average,
+            ex_dividend_date,
+            last_fetched
+          )
         `)
         .eq('portfolio_id', portfolioId);
 
-      if (securitiesError) {
-        console.error('Error fetching portfolio securities:', securitiesError);
-        throw new Error('Failed to fetch portfolio securities');
-      }
+      if (fetchError) throw fetchError;
+      if (!portfolioSecurities) return [];
 
-      if (!securities) {
-        return [];
-      }
-
-      // Update each security with fresh data from our backend API
+      // Update each security with fresh data
       const updatedSecurities = await Promise.all(
-        securities.map(async (security) => {
+        (portfolioSecurities as unknown as PortfolioSecurityRecord[]).map(async (ps) => {
           try {
-            // Get the user's session token
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session?.access_token) {
-              throw new Error('No access token available');
-            }
+            const quoteSummary = await financialService.getQuoteSummary(ps.security.ticker);
+            if (!quoteSummary) return ps;
 
-            // Fetch updated data from our backend API
-            const response = await fetch(`/api/securities/${security.security.ticker}`, {
-              headers: {
-                'Authorization': `Bearer ${session.access_token}`
-              }
-            });
-
-            if (!response.ok) {
-              const error = await response.json();
-              throw new Error(error.error || 'Failed to fetch security data');
-            }
-
-            const quoteSummary = await response.json();
-            
-            if (!quoteSummary) {
-              console.error('No data returned from API for ticker:', security.security.ticker);
-              return security;
-            }
-
-            // Extract relevant data from quote summary
-            const price = quoteSummary.price?.regularMarketPrice || 0;
-            const dividendYield = quoteSummary.summaryDetail?.dividendYield || 0;
-            const sma200 = price > (quoteSummary.summaryDetail?.twoHundredDayAverage || 0) ? 'above' : 'below';
+            const {
+              price,
+              summaryDetail,
+              price: priceData
+            } = quoteSummary;
 
             // Update the security in the database
             const { data: updatedSecurity, error: updateError } = await supabase
               .from('securities')
               .update({
-                name: quoteSummary.price?.longName || quoteSummary.price?.shortName || security.security.ticker,
+                name: priceData?.longName || priceData?.shortName || ps.security.ticker,
                 sector: quoteSummary.assetProfile?.sector || 'Unknown',
-                price,
-                yield: dividendYield * 100, // Convert to percentage
-                sma200,
+                industry: quoteSummary.assetProfile?.industry || 'Unknown',
+                price: price?.regularMarketPrice || 0,
+                prev_close: price?.regularMarketPreviousClose || 0,
+                open: price?.regularMarketOpen || 0,
+                volume: price?.regularMarketVolume || 0,
+                market_cap: price?.marketCap || 0,
+                pe: summaryDetail?.trailingPE || 0,
+                eps: summaryDetail?.trailingPE || 0, // Using trailingPE as fallback since trailingEps is not available
+                dividend: summaryDetail?.dividendRate || 0,
+                yield: summaryDetail?.dividendYield ? summaryDetail.dividendYield * 100 : null,
+                dividend_growth_5yr: summaryDetail?.fiveYearAvgDividendYield || 0,
+                payout_ratio: summaryDetail?.payoutRatio || 0,
+                sma200: (price?.regularMarketPrice || 0) > (summaryDetail?.twoHundredDayAverage || 0) ? 'above' : 'below',
+                day_low: price?.regularMarketDayLow || 0,
+                day_high: price?.regularMarketDayHigh || 0,
+                fifty_two_week_low: price?.regularMarketDayLow || 0, // Using day low as fallback
+                fifty_two_week_high: price?.regularMarketDayHigh || 0, // Using day high as fallback
+                average_volume: price?.regularMarketVolume || 0, // Using regular volume as fallback
+                forward_pe: summaryDetail?.forwardPE || 0,
+                price_to_sales_trailing_12_months: summaryDetail?.priceToSalesTrailing12Months || 0,
+                beta: summaryDetail?.beta || 0,
+                fifty_day_average: price?.regularMarketPrice || 0, // Using current price as fallback
+                two_hundred_day_average: summaryDetail?.twoHundredDayAverage || 0,
+                ex_dividend_date: summaryDetail?.exDividendDate ? new Date(summaryDetail.exDividendDate).toISOString() : '',
                 last_fetched: new Date().toISOString()
               })
-              .eq('id', security.security.id)
+              .eq('ticker', ps.security.ticker)
               .select()
               .single();
 
-            if (updateError) {
-              console.error('Error updating security:', updateError);
-              return security;
-            }
+            if (updateError) throw updateError;
 
             return {
-              ...security,
+              id: ps.id,
+              shares: ps.shares,
+              average_cost: ps.average_cost,
               security: {
-                ...security.security,
-                ...updatedSecurity
-              }
-            };
+                ...updatedSecurity,
+                id: ps.security.id,
+                ex_dividend_date: updatedSecurity.ex_dividend_date || ''
+              } as Security
+            } as PortfolioSecurity;
           } catch (error) {
-            console.error(`Error updating security ${security.security.ticker}:`, error);
-            return security;
+            console.error(`Error updating security ${ps.security.ticker}:`, error);
+            return {
+              id: ps.id,
+              shares: ps.shares,
+              average_cost: ps.average_cost,
+              security: {
+                ...ps.security,
+                ex_dividend_date: ps.security.ex_dividend_date || ''
+              } as Security
+            } as PortfolioSecurity;
           }
         })
       );
 
       return updatedSecurities;
     } catch (error) {
-      console.error('Error in updatePortfolioSecurities:', error);
+      console.error('Error updating portfolio securities:', error);
       handleYahooFinanceError(error);
       throw error;
     }

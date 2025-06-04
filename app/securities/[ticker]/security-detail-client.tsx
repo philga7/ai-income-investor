@@ -13,7 +13,8 @@ import {
   Calendar, 
   LineChart, 
   Download,
-  ArrowDownRight
+  ArrowDownRight,
+  DollarSign
 } from "lucide-react";
 import { SecurityChart } from "@/components/securities/security-chart";
 import { TechnicalIndicators } from "@/components/securities/technical-indicators";
@@ -43,6 +44,17 @@ interface Security {
   dividend_growth_5yr: number;
   payoutRatio: number;
   sma200: string;
+  dayLow: number;
+  dayHigh: number;
+  fiftyTwoWeekLow: number;
+  fiftyTwoWeekHigh: number;
+  averageVolume: number;
+  forwardPE: number;
+  priceToSalesTrailing12Months: number;
+  beta: number;
+  fiftyDayAverage: number;
+  twoHundredDayAverage: number;
+  exDividendDate: string;
 }
 
 interface SecurityDetailClientProps {
@@ -95,6 +107,50 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
         const dividend_growth_5yr = quoteSummary.summaryDetail?.fiveYearAvgDividendYield || 0;
         const payoutRatio = quoteSummary.summaryDetail?.payoutRatio || 0;
         const sma200 = price > (quoteSummary.summaryDetail?.twoHundredDayAverage || 0) ? 'above' : 'below';
+        const dayLow = quoteSummary.price?.regularMarketDayLow || 0;
+        const dayHigh = quoteSummary.price?.regularMarketDayHigh || 0;
+        const fiftyTwoWeekLow = quoteSummary.price?.fiftyTwoWeekLow || 0;
+        const fiftyTwoWeekHigh = quoteSummary.price?.fiftyTwoWeekHigh || 0;
+        const averageVolume = quoteSummary.price?.regularMarketAverageVolume || 0;
+        const forwardPE = quoteSummary.summaryDetail?.forwardPE || 0;
+        const priceToSalesTrailing12Months = quoteSummary.summaryDetail?.priceToSalesTrailing12Months || 0;
+        const beta = quoteSummary.summaryDetail?.beta || 0;
+        const fiftyDayAverage = quoteSummary.price?.fiftyDayAverage || 0;
+        const twoHundredDayAverage = quoteSummary.price?.twoHundredDayAverage || 0;
+        
+        // Format date to ISO string with timezone for PostgreSQL TIMESTAMP WITH TIME ZONE
+        const formatDate = (timestamp: number | undefined) => {
+          if (!timestamp) return null;
+          try {
+            // First check if the timestamp is a valid number
+            if (isNaN(timestamp)) {
+              console.warn('Invalid timestamp:', timestamp);
+              return null;
+            }
+
+            // Convert Unix timestamp to milliseconds
+            const date = new Date(timestamp * 1000);
+            
+            // Check if the date is valid
+            if (isNaN(date.getTime())) {
+              console.warn('Invalid date from timestamp:', timestamp);
+              return null;
+            }
+
+            // Format as UTC date string (YYYY-MM-DD)
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            
+            return `${year}-${month}-${day}`;
+          } catch (error) {
+            console.error('Error formatting date:', error);
+            return null;
+          }
+        };
+
+        const exDividendDate = formatDate(quoteSummary.summaryDetail?.exDividendDate);
+        const currentDate = new Date().toISOString().split('T')[0];
 
         // Update or insert into database
         const { data: securityData, error } = await supabase
@@ -116,7 +172,18 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
             dividend_growth_5yr,
             payout_ratio: payoutRatio,
             sma200,
-            last_fetched: new Date().toISOString()
+            day_low: dayLow,
+            day_high: dayHigh,
+            fifty_two_week_low: fiftyTwoWeekLow,
+            fifty_two_week_high: fiftyTwoWeekHigh,
+            average_volume: averageVolume,
+            forward_pe: forwardPE,
+            price_to_sales_trailing_12_months: priceToSalesTrailing12Months,
+            beta,
+            fifty_day_average: fiftyDayAverage,
+            two_hundred_day_average: twoHundredDayAverage,
+            ex_dividend_date: exDividendDate,
+            last_fetched: currentDate
           }, {
             onConflict: 'ticker',
             ignoreDuplicates: false
@@ -168,217 +235,220 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
   const tradingSignal = security.sma200 === "below" ? "buy" : "hold";
   
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-4">
       <BreadcrumbNav items={[
         { label: 'Securities', href: '/securities' },
         { label: ticker, href: `/securities/${ticker}` }
       ]} />
+      
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Price</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${security.price?.toFixed(2) || '0.00'}</div>
+            <p className={`text-xs ${priceChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+              {priceChange >= 0 ? '+' : ''}{priceChange?.toFixed(2) || '0.00'} ({priceChangePercent?.toFixed(2) || '0.00'}%)
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Dividend Yield</CardTitle>
+            <PieChart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{security.yield?.toFixed(2) || '0.00'}%</div>
+            <p className="text-xs text-muted-foreground">
+              5yr Avg: {security.dividend_growth_5yr?.toFixed(2) || '0.00'}%
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Payout Ratio</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{((security.payoutRatio || 0) * 100).toFixed(2)}%</div>
+            <p className="text-xs text-muted-foreground">
+              {(security.payoutRatio || 0) < 0.6 ? 'Sustainable' : 'High'}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">200 SMA</CardTitle>
+            <LineChart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              <Badge variant={security.sma200 === 'above' ? 'default' : 'destructive'}>
+                {(security.sma200 || 'unknown').toUpperCase()}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {security.sma200 === 'above' ? 'Bullish' : 'Bearish'} Trend
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight">{security.ticker}</h1>
-            <Badge variant="outline">{security.sector}</Badge>
-          </div>
-          <p className="text-xl text-muted-foreground">
-            {security.name}
-          </p>
-        </div>
-        
-        <div className="flex flex-col items-end">
-          <div className="text-3xl font-bold">${security.price?.toFixed(2) ?? 'N/A'}</div>
-          <div className={`flex items-center ${priceChange >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-            {priceChange >= 0 ? (
-              <ArrowUpRight className="mr-1 h-4 w-4" />
-            ) : (
-              <ArrowDownRight className="mr-1 h-4 w-4" />
-            )}
-            <span>
-              {priceChange >= 0 ? '+' : ''}{priceChange?.toFixed(2) ?? 'N/A'} ({priceChangePercent?.toFixed(2) ?? 'N/A'}%)
-            </span>
-          </div>
-          <div className="text-sm text-muted-foreground mt-1">Last updated: Today, 4:00 PM</div>
-        </div>
-      </div>
-      
-      <div className="flex justify-between gap-4 overflow-auto whitespace-nowrap rounded-lg border p-1">
-        <Button 
-          variant={tradingSignal === "buy" ? "default" : "outline"}
-          className={tradingSignal === "buy" ? "bg-green-600 hover:bg-green-700" : ""}
-        >
-          <ArrowUpRight className="mr-2 h-4 w-4" />
-          {tradingSignal === "buy" ? "Buy Signal" : "Hold"}
-        </Button>
-        
-        <Button variant="outline">
-          <Briefcase className="mr-2 h-4 w-4" />
-          Add to Portfolio
-        </Button>
-        
-        <Button variant="outline">
-          <MessageSquare className="mr-2 h-4 w-4" />
-          AI Analysis
-        </Button>
-        
-        <Button variant="outline">
-          <Download className="mr-2 h-4 w-4" />
-          Export Data
-        </Button>
-      </div>
-      
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center">
-              <BarChart3 className="mr-2 h-4 w-4" />
-              Market Data
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2 text-sm">
-            <div>
-              <p className="text-muted-foreground">Open</p>
-              <p className="font-medium">${security.open?.toFixed(2) ?? 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Prev Close</p>
-              <p className="font-medium">${security.prevClose?.toFixed(2) ?? 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Volume</p>
-              <p className="font-medium">{security.volume?.toLocaleString() ?? 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Market Cap</p>
-              <p className="font-medium">${(security.marketCap / 1000000000000)?.toFixed(2) ?? 'N/A'}T</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">P/E Ratio</p>
-              <p className="font-medium">{security.pe?.toFixed(1) ?? 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">EPS</p>
-              <p className="font-medium">${security.eps?.toFixed(2) ?? 'N/A'}</p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center">
-              <PieChart className="mr-2 h-4 w-4" />
-              Dividend Info
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2 text-sm">
-            <div>
-              <p className="text-muted-foreground">Annual Dividend</p>
-              <p className="font-medium">${security.dividend?.toFixed(2) ?? 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Yield</p>
-              <p className="font-medium">{security.yield?.toFixed(1) ?? 'N/A'}%</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Payout Ratio</p>
-              <p className="font-medium">{security.payoutRatio ?? 'N/A'}%</p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">5yr Growth</p>
-              <p className="font-medium">{security.dividend_growth_5yr?.toFixed(1) ?? 'N/A'}%</p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center">
-              <Calendar className="mr-2 h-4 w-4" />
-              Upcoming Dividends
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 gap-2 text-sm">
-            <div>
-              <p className="text-muted-foreground">Ex-Dividend Date</p>
-              <p className="font-medium">
-                {nextDividend?.ex_date ? new Date(nextDividend.ex_date).toLocaleDateString() : 'Not available'}
-              </p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Payment Date</p>
-              <p className="font-medium">
-                {nextDividend?.payment_date ? new Date(nextDividend.payment_date).toLocaleDateString() : 'Not available'}
-              </p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Payment Schedule</p>
-              <p className="font-medium">Quarterly</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <Tabs defaultValue="overview">
+      <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="technical">Technical Analysis</TabsTrigger>
-          <TabsTrigger value="dividend">Dividend History</TabsTrigger>
-          <TabsTrigger value="ai-analysis">AI Analysis</TabsTrigger>
+          <TabsTrigger value="technical">Technical</TabsTrigger>
+          <TabsTrigger value="dividends">Dividends</TabsTrigger>
+          <TabsTrigger value="summary">Summary Details</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="overview">
-          <Card>
-            <CardHeader>
-              <CardTitle>Stock Chart</CardTitle>
-              <CardDescription>
-                6-month price history
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SecurityChart ticker={ticker} />
-            </CardContent>
-          </Card>
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <Card className="col-span-4">
+              <CardHeader>
+                <CardTitle>Price History</CardTitle>
+              </CardHeader>
+              <CardContent className="pl-2">
+                <SecurityChart ticker={ticker} />
+              </CardContent>
+            </Card>
+            <Card className="col-span-3">
+              <CardHeader>
+                <CardTitle>Technical Indicators</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TechnicalIndicators ticker={ticker} />
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
-        
-        <TabsContent value="technical">
+
+        <TabsContent value="technical" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Technical Indicators</CardTitle>
-              <CardDescription>
-                Technical analysis for {ticker}
-              </CardDescription>
+              <CardTitle>Technical Analysis</CardTitle>
             </CardHeader>
             <CardContent>
               <TechnicalIndicators ticker={ticker} />
             </CardContent>
           </Card>
         </TabsContent>
-        
-        <TabsContent value="dividend">
+
+        <TabsContent value="dividends" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Dividend History</CardTitle>
-              <CardDescription>
-                Historical dividend payments for {ticker}
-              </CardDescription>
             </CardHeader>
             <CardContent>
               <DividendHistory ticker={ticker} />
             </CardContent>
           </Card>
         </TabsContent>
-        
-        <TabsContent value="ai-analysis">
-          <Card>
-            <CardHeader>
-              <CardTitle>AI Analysis</CardTitle>
-              <CardDescription>
-                AI-powered insights for {ticker}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>AI analysis content will be displayed here.</p>
-            </CardContent>
-          </Card>
+
+        <TabsContent value="summary" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle>Market Data</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <dl className="space-y-2">
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-muted-foreground">Open</dt>
+                    <dd className="text-sm font-medium">${security.open?.toFixed(2) || '0.00'}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-muted-foreground">Day Range</dt>
+                    <dd className="text-sm font-medium">${security.dayLow?.toFixed(2) || '0.00'} - ${security.dayHigh?.toFixed(2) || '0.00'}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-muted-foreground">52 Week Range</dt>
+                    <dd className="text-sm font-medium">${security.fiftyTwoWeekLow?.toFixed(2) || '0.00'} - ${security.fiftyTwoWeekHigh?.toFixed(2) || '0.00'}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-muted-foreground">Volume</dt>
+                    <dd className="text-sm font-medium">{(security.volume || 0).toLocaleString()}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-muted-foreground">Avg Volume</dt>
+                    <dd className="text-sm font-medium">{(security.averageVolume || 0).toLocaleString()}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-muted-foreground">Market Cap</dt>
+                    <dd className="text-sm font-medium">${((security.marketCap || 0) / 1e9).toFixed(2)}B</dd>
+                  </div>
+                </dl>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Valuation</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <dl className="space-y-2">
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-muted-foreground">P/E Ratio</dt>
+                    <dd className="text-sm font-medium">{security.pe?.toFixed(2) || '0.00'}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-muted-foreground">Forward P/E</dt>
+                    <dd className="text-sm font-medium">{security.forwardPE?.toFixed(2) || '0.00'}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-muted-foreground">P/S Ratio</dt>
+                    <dd className="text-sm font-medium">{security.priceToSalesTrailing12Months?.toFixed(2) || '0.00'}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-muted-foreground">Beta</dt>
+                    <dd className="text-sm font-medium">{security.beta?.toFixed(2) || '0.00'}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-muted-foreground">50 Day Avg</dt>
+                    <dd className="text-sm font-medium">${security.fiftyDayAverage?.toFixed(2) || '0.00'}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-muted-foreground">200 Day Avg</dt>
+                    <dd className="text-sm font-medium">${security.twoHundredDayAverage?.toFixed(2) || '0.00'}</dd>
+                  </div>
+                </dl>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Dividend Info</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <dl className="space-y-2">
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-muted-foreground">Dividend Rate</dt>
+                    <dd className="text-sm font-medium">${security.dividend?.toFixed(2) || '0.00'}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-muted-foreground">Dividend Yield</dt>
+                    <dd className="text-sm font-medium">{security.yield?.toFixed(2) || '0.00'}%</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-muted-foreground">Payout Ratio</dt>
+                    <dd className="text-sm font-medium">{((security.payoutRatio || 0) * 100).toFixed(2)}%</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-muted-foreground">5yr Avg Yield</dt>
+                    <dd className="text-sm font-medium">{security.dividend_growth_5yr?.toFixed(2) || '0.00'}%</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-sm text-muted-foreground">Ex-Dividend Date</dt>
+                    <dd className="text-sm font-medium">
+                      {security.exDividendDate ? new Date(security.exDividendDate).toLocaleDateString() : 'N/A'}
+                    </dd>
+                  </div>
+                </dl>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

@@ -54,7 +54,7 @@ export function PriceDataTest() {
         )}
 
         {priceData && (
-          <div className="space-y-2">
+          <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium">Current Price</p>
@@ -75,6 +75,48 @@ export function PriceDataTest() {
               <div>
                 <p className="text-sm font-medium">Volume</p>
                 <p className="text-lg">{priceData.price.regularMarketVolume?.toLocaleString()}</p>
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-semibold mb-2">Summary Details</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium">52 Week Range</p>
+                  <p className="text-lg">
+                    ${priceData.summaryDetail?.fiftyTwoWeekLow?.toFixed(2)} - ${priceData.summaryDetail?.fiftyTwoWeekHigh?.toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Average Volume</p>
+                  <p className="text-lg">{priceData.summaryDetail?.averageVolume?.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Forward P/E</p>
+                  <p className="text-lg">{priceData.summaryDetail?.forwardPE?.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Price/Sales (TTM)</p>
+                  <p className="text-lg">{priceData.summaryDetail?.priceToSalesTrailing12Months?.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Beta</p>
+                  <p className="text-lg">{priceData.summaryDetail?.beta?.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">50 Day Average</p>
+                  <p className="text-lg">${priceData.summaryDetail?.fiftyDayAverage?.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">200 Day Average</p>
+                  <p className="text-lg">${priceData.summaryDetail?.twoHundredDayAverage?.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Ex-Dividend Date</p>
+                  <p className="text-lg">
+                    {priceData.summaryDetail?.exDividendDate ? new Date(priceData.summaryDetail.exDividendDate * 1000).toLocaleDateString() : 'N/A'}
+                  </p>
+                </div>
               </div>
             </div>
           </div>

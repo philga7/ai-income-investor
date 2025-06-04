@@ -5,11 +5,32 @@ export interface Security {
   ticker: string;
   name: string;
   sector: string;
+  industry: string;
   price: number;
+  prev_close: number;
+  open: number;
+  volume: number;
+  market_cap: number;
+  pe: number;
+  eps: number;
+  dividend: number;
   yield: number;
+  dividend_growth_5yr: number;
+  payout_ratio: number;
   sma200: 'above' | 'below';
   tags: string[];
-  dividend_growth_5yr: number;
+  day_low: number;
+  day_high: number;
+  fifty_two_week_low: number;
+  fifty_two_week_high: number;
+  average_volume: number;
+  forward_pe: number;
+  price_to_sales_trailing_12_months: number;
+  beta: number;
+  fifty_day_average: number;
+  two_hundred_day_average: number;
+  ex_dividend_date: string;
+  last_fetched: string;
 }
 
 export interface PortfolioSecurity {
