@@ -1,6 +1,6 @@
 import yahooFinance from 'yahoo-finance2';
 import { YAHOO_FINANCE_CONFIG, YahooFinanceModule } from './config';
-import type { QuoteSummary, YahooFinanceError, BalanceSheetStatement, CashflowStatement, Earnings, Price, SummaryDetail } from './types';
+import type { QuoteSummary, YahooFinanceError, BalanceSheetStatement, CashflowStatement, Earnings, Price, SummaryDetail, FinancialData } from './types';
 
 class YahooFinanceClient {
   private static instance: YahooFinanceClient;
@@ -147,6 +147,40 @@ class YahooFinanceClient {
     };
   }
 
+  private transformFinancialData(data: any): FinancialData {
+    return {
+      currentPrice: data.currentPrice,
+      targetHighPrice: data.targetHighPrice,
+      targetLowPrice: data.targetLowPrice,
+      targetMeanPrice: data.targetMeanPrice,
+      targetMedianPrice: data.targetMedianPrice,
+      recommendationMean: data.recommendationMean,
+      recommendationKey: data.recommendationKey,
+      numberOfAnalystOpinions: data.numberOfAnalystOpinions,
+      totalCash: data.totalCash,
+      totalCashPerShare: data.totalCashPerShare,
+      ebitda: data.ebitda,
+      totalDebt: data.totalDebt,
+      quickRatio: data.quickRatio,
+      currentRatio: data.currentRatio,
+      totalRevenue: data.totalRevenue,
+      debtToEquity: data.debtToEquity,
+      revenuePerShare: data.revenuePerShare,
+      returnOnAssets: data.returnOnAssets,
+      returnOnEquity: data.returnOnEquity,
+      grossProfits: data.grossProfits,
+      freeCashflow: data.freeCashflow,
+      operatingCashflow: data.operatingCashflow,
+      earningsGrowth: data.earningsGrowth,
+      revenueGrowth: data.revenueGrowth,
+      grossMargins: data.grossMargins,
+      ebitdaMargins: data.ebitdaMargins,
+      operatingMargins: data.operatingMargins,
+      profitMargins: data.profitMargins,
+      financialCurrency: data.financialCurrency
+    };
+  }
+
   public async getQuoteSummary(
     symbol: string,
     modules: readonly YahooFinanceModule[] = YAHOO_FINANCE_CONFIG.defaultModules
@@ -185,6 +219,7 @@ class YahooFinanceClient {
         earnings: result.earnings ? this.transformEarnings(result.earnings) : undefined,
         price: result.price ? this.transformPrice(result.price) : undefined,
         summaryDetail: result.summaryDetail ? this.transformSummaryDetail(result.summaryDetail) : undefined,
+        financialData: result.financialData ? this.transformFinancialData(result.financialData) : undefined,
       };
 
       console.log('YahooFinanceClient: Transformed result for', symbol, transformedResult);

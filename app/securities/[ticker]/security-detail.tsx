@@ -183,6 +183,21 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
             fifty_day_average: fiftyDayAverage,
             two_hundred_day_average: twoHundredDayAverage,
             ex_dividend_date: exDividendDate,
+            // Add financial data fields
+            target_low_price: quoteSummary.financialData?.targetLowPrice,
+            target_high_price: quoteSummary.financialData?.targetHighPrice,
+            recommendation_key: quoteSummary.financialData?.recommendationKey,
+            number_of_analyst_opinions: quoteSummary.financialData?.numberOfAnalystOpinions,
+            total_cash: quoteSummary.financialData?.totalCash,
+            total_debt: quoteSummary.financialData?.totalDebt,
+            current_ratio: quoteSummary.financialData?.currentRatio,
+            quick_ratio: quoteSummary.financialData?.quickRatio,
+            debt_to_equity: quoteSummary.financialData?.debtToEquity,
+            return_on_equity: quoteSummary.financialData?.returnOnEquity,
+            profit_margins: quoteSummary.financialData?.profitMargins,
+            operating_margins: quoteSummary.financialData?.operatingMargins,
+            revenue_growth: quoteSummary.financialData?.revenueGrowth,
+            earnings_growth: quoteSummary.financialData?.earningsGrowth,
             last_fetched: currentDate
           }, {
             onConflict: 'ticker',

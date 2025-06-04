@@ -119,6 +119,62 @@ export function PriceDataTest() {
                 </div>
               </div>
             </div>
+
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-semibold mb-2">Financial Data</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium">Target Price Range</p>
+                  <p className="text-lg">
+                    ${priceData.financialData?.targetLowPrice?.toFixed(2)} - ${priceData.financialData?.targetHighPrice?.toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Analyst Recommendation</p>
+                  <p className="text-lg capitalize">{priceData.financialData?.recommendationKey} ({priceData.financialData?.numberOfAnalystOpinions} analysts)</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Total Cash</p>
+                  <p className="text-lg">${(priceData.financialData?.totalCash || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Total Debt</p>
+                  <p className="text-lg">${(priceData.financialData?.totalDebt || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Current Ratio</p>
+                  <p className="text-lg">{priceData.financialData?.currentRatio?.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Quick Ratio</p>
+                  <p className="text-lg">{priceData.financialData?.quickRatio?.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Debt to Equity</p>
+                  <p className="text-lg">{priceData.financialData?.debtToEquity?.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Return on Equity</p>
+                  <p className="text-lg">{(priceData.financialData?.returnOnEquity || 0).toFixed(2)}%</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Profit Margin</p>
+                  <p className="text-lg">{(priceData.financialData?.profitMargins || 0).toFixed(2)}%</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Operating Margin</p>
+                  <p className="text-lg">{(priceData.financialData?.operatingMargins || 0).toFixed(2)}%</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Revenue Growth</p>
+                  <p className="text-lg">{(priceData.financialData?.revenueGrowth || 0).toFixed(2)}%</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Earnings Growth</p>
+                  <p className="text-lg">{(priceData.financialData?.earningsGrowth || 0).toFixed(2)}%</p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>

@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ArrowUpRight, AlertCircle, LineChart, Search, Filter } from "lucide-react";
 import Link from "next/link";
 import { ProtectedRoute } from '@/components/auth/protected-route';
-import { securityService, Security } from '@/services/securityService';
+import { securityService, Security } from '@/services/securityDataService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";

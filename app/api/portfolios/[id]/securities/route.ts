@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { securityService } from '@/services/securityService';
+import { securityService } from '@/services/securityDataService';
 
 export async function GET(
   request: NextRequest,
