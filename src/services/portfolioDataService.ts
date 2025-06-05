@@ -146,12 +146,16 @@ export const portfolioDataService = {
                 total_debt: quoteSummary.financialData?.totalDebt || 0,
                 current_ratio: quoteSummary.financialData?.currentRatio || 0,
                 quick_ratio: quoteSummary.financialData?.quickRatio || 0,
-                debt_to_equity: quoteSummary.financialData?.debtToEquity || 0,
-                return_on_equity: quoteSummary.financialData?.returnOnEquity || 0,
-                profit_margins: quoteSummary.financialData?.profitMargins || 0,
-                operating_margins: quoteSummary.financialData?.operatingMargins || 0,
-                revenue_growth: quoteSummary.financialData?.revenueGrowth || 0,
-                earnings_growth: quoteSummary.financialData?.earningsGrowth || 0,
+                debt_to_equity: quoteSummary.financialData?.debtToEquity,
+                return_on_equity: quoteSummary.financialData?.returnOnEquity,
+                profit_margins: quoteSummary.financialData?.profitMargins,
+                operating_margins: quoteSummary.financialData?.operatingMargins,
+                revenue_growth: quoteSummary.financialData?.revenueGrowth,
+                earnings_growth: quoteSummary.financialData?.earningsGrowth,
+                // Add cash flow data
+                operating_cash_flow: quoteSummary.financialData?.operatingCashflow,
+                free_cash_flow: quoteSummary.financialData?.freeCashflow,
+                cash_flow_growth: quoteSummary.cashflowStatementHistory?.cashflowStatements[0]?.totalCashFromOperatingActivities,
                 last_fetched: new Date().toISOString()
               })
               .eq('ticker', ps.security.ticker)

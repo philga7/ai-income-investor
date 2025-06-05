@@ -175,6 +175,36 @@ export function PriceDataTest() {
                 </div>
               </div>
             </div>
+
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-semibold mb-2">Cash Flow Data</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium">Operating Cash Flow</p>
+                  <p className="text-lg">${(priceData.financialData?.operatingCashflow || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Free Cash Flow</p>
+                  <p className="text-lg">${(priceData.financialData?.freeCashflow || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Net Income</p>
+                  <p className="text-lg">
+                    {priceData.cashflowStatementHistory?.cashflowStatements[0]?.netIncome 
+                      ? `$${(priceData.cashflowStatementHistory.cashflowStatements[0].netIncome).toLocaleString()}`
+                      : 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Capital Expenditures</p>
+                  <p className="text-lg">
+                    {priceData.cashflowStatementHistory?.cashflowStatements[0]?.capitalExpenditures 
+                      ? `$${(priceData.cashflowStatementHistory.cashflowStatements[0].capitalExpenditures).toLocaleString()}`
+                      : 'N/A'}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
