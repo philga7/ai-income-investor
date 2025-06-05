@@ -55,6 +55,9 @@ interface Security {
   fiftyDayAverage: number;
   twoHundredDayAverage: number;
   exDividendDate: string;
+  operating_cash_flow: number;
+  free_cash_flow: number;
+  cash_flow_growth: number;
 }
 
 interface SecurityDetailClientProps {
@@ -198,6 +201,10 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
             operating_margins: quoteSummary.financialData?.operatingMargins,
             revenue_growth: quoteSummary.financialData?.revenueGrowth,
             earnings_growth: quoteSummary.financialData?.earningsGrowth,
+            // Add cash flow data
+            operating_cash_flow: quoteSummary.financialData?.operatingCashflow,
+            free_cash_flow: quoteSummary.financialData?.freeCashflow,
+            cash_flow_growth: quoteSummary.cashflowStatementHistory?.cashflowStatements[0]?.changeInCash,
             last_fetched: currentDate
           }, {
             onConflict: 'ticker',
@@ -249,6 +256,25 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
   // Calculate trading signal
   const tradingSignal = security.sma200 === "below" ? "buy" : "hold";
   
+  function formatCurrency(value: number | null | undefined): string {
+    if (value === null || value === undefined) return 'N/A';
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      notation: 'compact',
+      maximumFractionDigits: 1
+    }).format(value);
+  }
+
+  function formatPercentage(value: number | null | undefined): string {
+    if (value === null || value === undefined) return 'N/A';
+    return new Intl.NumberFormat('en-US', {
+      style: 'percent',
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1
+    }).format(value / 100);
+  }
+
   return (
     <div className="container mx-auto p-4">
       <BreadcrumbNav items={[
@@ -461,6 +487,38 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
                     </dd>
                   </div>
                 </dl>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Operating Cash Flow</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {formatCurrency(security.operating_cash_flow)}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Free Cash Flow</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {formatCurrency(security.free_cash_flow)}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Cash Flow Growth</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {formatPercentage(security.cash_flow_growth)}
+                </div>
               </CardContent>
             </Card>
           </div>
