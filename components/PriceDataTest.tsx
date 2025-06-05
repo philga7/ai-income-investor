@@ -358,6 +358,88 @@ export function PriceDataTest() {
                 </div>
               </div>
             </div>
+
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-semibold mb-2">Balance Sheet</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium">Total Assets</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.totalAssets || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Total Liabilities</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.totalLiab || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Total Current Assets</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.totalCurrentAssets || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Total Current Liabilities</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.totalCurrentLiabilities || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Cash</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.cash || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Short Term Investments</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.shortTermInvestments || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Net Receivables</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.netReceivables || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Inventory</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.inventory || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Long Term Investments</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.longTermInvestments || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Property Plant Equipment</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.propertyPlantEquipment || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Goodwill</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.goodwill || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Intangible Assets</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.intangibleAssets || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Accounts Payable</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.accountsPayable || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Short/Long Term Debt</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.shortLongTermDebt || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Long Term Debt</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.longTermDebt || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Retained Earnings</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.retainedEarnings || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Treasury Stock</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.treasuryStock || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Common Stock</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.commonStock || 0).toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Capital Surplus</p>
+                  <p className="text-lg">${(priceData.balanceSheetHistory?.balanceSheetStatements[0]?.capitalSurplus || 0).toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
