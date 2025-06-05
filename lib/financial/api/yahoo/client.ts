@@ -89,10 +89,66 @@ class YahooFinanceClient {
 
   private transformEarnings(earnings: any): Earnings {
     return {
-      earningsDate: earnings.earningsChart.earningsDate.map((date: Date) => date.getTime()),
+      maxAge: earnings.maxAge ?? 0,
+      earningsDate: earnings.earningsChart.earningsDate.map((date: any) => {
+        if (date instanceof Date) {
+          return date.getTime();
+        }
+        // If it's already a timestamp, return it
+        if (typeof date === 'number') {
+          return date;
+        }
+        // If it's a string, convert to timestamp
+        if (typeof date === 'string') {
+          return new Date(date).getTime();
+        }
+        return 0;
+      }),
       earningsAverage: earnings.earningsChart.currentQuarterEstimate ?? 0,
       earningsLow: earnings.earningsChart.quarterly[0]?.estimate ?? 0,
       earningsHigh: earnings.earningsChart.quarterly[0]?.estimate ?? 0,
+      earningsChart: {
+        quarterly: earnings.earningsChart.quarterly.map((q: any) => ({
+          date: q.date instanceof Date ? q.date.getTime() : 
+                typeof q.date === 'number' ? q.date :
+                typeof q.date === 'string' ? new Date(q.date).getTime() : 0,
+          actual: q.actual ?? 0,
+          estimate: q.estimate ?? 0
+        })) ?? [],
+        currentQuarterEstimate: earnings.earningsChart.currentQuarterEstimate ?? 0,
+        currentQuarterEstimateDate: earnings.earningsChart.currentQuarterEstimateDate ?? '',
+        currentQuarterEstimateYear: earnings.earningsChart.currentQuarterEstimateYear ?? 0,
+        earningsDate: earnings.earningsChart.earningsDate.map((date: any) => {
+          if (date instanceof Date) {
+            return date.getTime();
+          }
+          if (typeof date === 'number') {
+            return date;
+          }
+          if (typeof date === 'string') {
+            return new Date(date).getTime();
+          }
+          return 0;
+        }) ?? [],
+        isEarningsDateEstimate: earnings.earningsChart.isEarningsDateEstimate ?? false
+      },
+      financialsChart: {
+        yearly: earnings.financialsChart.yearly.map((y: any) => ({
+          date: y.date instanceof Date ? y.date.getTime() :
+                typeof y.date === 'number' ? y.date :
+                typeof y.date === 'string' ? new Date(y.date).getTime() : 0,
+          revenue: y.revenue ?? 0,
+          earnings: y.earnings ?? 0
+        })) ?? [],
+        quarterly: earnings.financialsChart.quarterly.map((q: any) => ({
+          date: q.date instanceof Date ? q.date.getTime() :
+                typeof q.date === 'number' ? q.date :
+                typeof q.date === 'string' ? new Date(q.date).getTime() : 0,
+          revenue: q.revenue ?? 0,
+          earnings: q.earnings ?? 0
+        })) ?? []
+      },
+      financialCurrency: earnings.financialCurrency ?? 'USD'
     };
   }
 

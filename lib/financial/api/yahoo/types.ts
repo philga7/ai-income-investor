@@ -103,10 +103,36 @@ export interface CashflowStatement {
 }
 
 export interface Earnings {
+  maxAge: number;
   earningsDate: number[];
   earningsAverage: number;
   earningsLow: number;
   earningsHigh: number;
+  earningsChart: {
+    quarterly: {
+      date: number;
+      actual: number;
+      estimate: number;
+    }[];
+    currentQuarterEstimate: number;
+    currentQuarterEstimateDate: string;
+    currentQuarterEstimateYear: number;
+    earningsDate: number[];
+    isEarningsDateEstimate: boolean;
+  };
+  financialsChart: {
+    yearly: {
+      date: number;
+      revenue: number;
+      earnings: number;
+    }[];
+    quarterly: {
+      date: number;
+      revenue: number;
+      earnings: number;
+    }[];
+  };
+  financialCurrency: string;
 }
 
 export interface FinancialData {

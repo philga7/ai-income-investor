@@ -57,6 +57,38 @@ interface Security {
   operating_cash_flow: number;
   free_cash_flow: number;
   cash_flow_growth: number;
+  earnings?: {
+    maxAge: number;
+    earningsDate: number[];
+    earningsAverage: number;
+    earningsLow: number;
+    earningsHigh: number;
+    earningsChart: {
+      quarterly: {
+        date: number;
+        actual: number;
+        estimate: number;
+      }[];
+      currentQuarterEstimate: number;
+      currentQuarterEstimateDate: string;
+      currentQuarterEstimateYear: number;
+      earningsDate: number[];
+      isEarningsDateEstimate: boolean;
+    };
+    financialsChart: {
+      yearly: {
+        date: number;
+        revenue: number;
+        earnings: number;
+      }[];
+      quarterly: {
+        date: number;
+        revenue: number;
+        earnings: number;
+      }[];
+    };
+    financialCurrency: string;
+  };
 }
 
 interface SecurityDetailClientProps {
@@ -206,6 +238,39 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
             operating_cash_flow: quoteSummary.financialData?.operatingCashflow,
             free_cash_flow: quoteSummary.financialData?.freeCashflow,
             cash_flow_growth: quoteSummary.cashflowStatementHistory?.cashflowStatements[0]?.changeInCash,
+            // Add earnings data
+            earnings: quoteSummary.earnings ? {
+              maxAge: quoteSummary.earnings.maxAge,
+              earningsDate: quoteSummary.earnings.earningsDate,
+              earningsAverage: quoteSummary.earnings.earningsAverage,
+              earningsLow: quoteSummary.earnings.earningsLow,
+              earningsHigh: quoteSummary.earnings.earningsHigh,
+              earningsChart: {
+                quarterly: quoteSummary.earnings.earningsChart.quarterly.map((q: { date: number; actual: number; estimate: number }) => ({
+                  date: q.date,
+                  actual: q.actual,
+                  estimate: q.estimate
+                })),
+                currentQuarterEstimate: quoteSummary.earnings.earningsChart.currentQuarterEstimate,
+                currentQuarterEstimateDate: quoteSummary.earnings.earningsChart.currentQuarterEstimateDate,
+                currentQuarterEstimateYear: quoteSummary.earnings.earningsChart.currentQuarterEstimateYear,
+                earningsDate: quoteSummary.earnings.earningsChart.earningsDate,
+                isEarningsDateEstimate: quoteSummary.earnings.earningsChart.isEarningsDateEstimate
+              },
+              financialsChart: {
+                yearly: quoteSummary.earnings.financialsChart.yearly.map((y: { date: number; revenue: number; earnings: number }) => ({
+                  date: y.date,
+                  revenue: y.revenue,
+                  earnings: y.earnings
+                })),
+                quarterly: quoteSummary.earnings.financialsChart.quarterly.map((q: { date: number; revenue: number; earnings: number }) => ({
+                  date: q.date,
+                  revenue: q.revenue,
+                  earnings: q.earnings
+                }))
+              },
+              financialCurrency: quoteSummary.earnings.financialCurrency
+            } : null,
             last_fetched: currentDate
           }, {
             onConflict: 'ticker',
@@ -525,6 +590,100 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Earnings Section */}
+      <div className="bg-white shadow rounded-lg p-6">
+        <h2 className="text-xl font-semibold mb-4">Earnings</h2>
+        
+        {/* Next Earnings */}
+        <div className="mb-6">
+          <h3 className="text-lg font-medium mb-3">Next Earnings</h3>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-gray-600">
+                  {security.earnings?.earningsChart?.currentQuarterEstimateDate} {security.earnings?.earningsChart?.currentQuarterEstimateYear}
+                </p>
+                <p className="text-sm text-gray-500">Estimate: ${security.earnings?.earningsChart?.currentQuarterEstimate.toFixed(2)}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-500">Range</p>
+                <p className="font-medium">
+                  ${security.earnings?.earningsLow.toFixed(2)} - ${security.earnings?.earningsHigh.toFixed(2)}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Quarterly Financials */}
+          <div>
+            <h3 className="text-lg font-medium mb-3">Quarterly Financials</h3>
+            <div className="space-y-4">
+              {security.earnings?.financialsChart?.quarterly.slice(0, 4).map((quarter: { date: number; revenue: number; earnings: number }, index: number) => (
+                <div key={index} className="border-b pb-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">
+                      {new Date(quarter.date).toLocaleDateString()}
+                    </span>
+                    <span className="font-medium">
+                      ${quarter.earnings.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    Revenue: ${quarter.revenue.toFixed(2)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Annual Financials */}
+          <div>
+            <h3 className="text-lg font-medium mb-3">Annual Financials</h3>
+            <div className="space-y-4">
+              {security.earnings?.financialsChart?.yearly.slice(0, 4).map((year: { date: number; revenue: number; earnings: number }, index: number) => (
+                <div key={index} className="border-b pb-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">
+                      {new Date(year.date).getFullYear()}
+                    </span>
+                    <span className="font-medium">
+                      ${year.earnings.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    Revenue: ${year.revenue.toFixed(2)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Historical Earnings */}
+        <div className="mt-6">
+          <h3 className="text-lg font-medium mb-3">Historical Earnings</h3>
+          <div className="space-y-4">
+            {security.earnings?.earningsChart?.quarterly.slice(0, 4).map((earning: { date: number; actual: number; estimate: number }, index: number) => (
+              <div key={index} className="border-b pb-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">
+                    {new Date(earning.date).toLocaleDateString()}
+                  </span>
+                  <span className={`font-medium ${earning.actual >= earning.estimate ? 'text-green-600' : 'text-red-600'}`}>
+                    ${earning.actual.toFixed(2)}
+                  </span>
+                </div>
+                <div className="text-sm text-gray-500">
+                  Estimate: ${earning.estimate.toFixed(2)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 } 

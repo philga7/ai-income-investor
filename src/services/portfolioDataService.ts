@@ -54,6 +54,41 @@ interface DatabaseSecurity {
   fifty_day_average: number;
   two_hundred_day_average: number;
   ex_dividend_date: string;
+  operating_cash_flow: number;
+  free_cash_flow: number;
+  cash_flow_growth: number;
+  earnings?: {
+    maxAge: number;
+    earningsDate: number[];
+    earningsAverage: number;
+    earningsLow: number;
+    earningsHigh: number;
+    earningsChart: {
+      quarterly: {
+        date: number;
+        actual: number;
+        estimate: number;
+      }[];
+      currentQuarterEstimate: number;
+      currentQuarterEstimateDate: string;
+      currentQuarterEstimateYear: number;
+      earningsDate: number[];
+      isEarningsDateEstimate: boolean;
+    };
+    financialsChart: {
+      yearly: {
+        date: number;
+        revenue: number;
+        earnings: number;
+      }[];
+      quarterly: {
+        date: number;
+        revenue: number;
+        earnings: number;
+      }[];
+    };
+    financialCurrency: string;
+  };
   last_fetched: string;
 }
 
@@ -360,6 +395,39 @@ export const portfolioDataService = {
               operating_cash_flow: financialData?.operatingCashflow,
               free_cash_flow: financialData?.freeCashflow,
               cash_flow_growth: cashflowStatementHistory?.cashflowStatements[0]?.totalCashFromOperatingActivities,
+              // Add earnings data
+              earnings: quoteSummary.earnings ? {
+                maxAge: quoteSummary.earnings.maxAge,
+                earningsDate: quoteSummary.earnings.earningsDate,
+                earningsAverage: quoteSummary.earnings.earningsAverage,
+                earningsLow: quoteSummary.earnings.earningsLow,
+                earningsHigh: quoteSummary.earnings.earningsHigh,
+                earningsChart: {
+                  quarterly: quoteSummary.earnings.earningsChart.quarterly.map((q: { date: number; actual: number; estimate: number }) => ({
+                    date: q.date,
+                    actual: q.actual,
+                    estimate: q.estimate
+                  })),
+                  currentQuarterEstimate: quoteSummary.earnings.earningsChart.currentQuarterEstimate,
+                  currentQuarterEstimateDate: quoteSummary.earnings.earningsChart.currentQuarterEstimateDate,
+                  currentQuarterEstimateYear: quoteSummary.earnings.earningsChart.currentQuarterEstimateYear,
+                  earningsDate: quoteSummary.earnings.earningsChart.earningsDate,
+                  isEarningsDateEstimate: quoteSummary.earnings.earningsChart.isEarningsDateEstimate
+                },
+                financialsChart: {
+                  yearly: quoteSummary.earnings.financialsChart.yearly.map((y: { date: number; revenue: number; earnings: number }) => ({
+                    date: y.date,
+                    revenue: y.revenue,
+                    earnings: y.earnings
+                  })),
+                  quarterly: quoteSummary.earnings.financialsChart.quarterly.map((q: { date: number; revenue: number; earnings: number }) => ({
+                    date: q.date,
+                    revenue: q.revenue,
+                    earnings: q.earnings
+                  }))
+                },
+                financialCurrency: quoteSummary.earnings.financialCurrency
+              } : null,
               last_fetched: new Date().toISOString()
             })
             .eq('id', ps.security.id)
