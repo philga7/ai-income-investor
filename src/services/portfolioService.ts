@@ -6,6 +6,27 @@ export interface Security {
   name: string;
   sector: string;
   industry: string;
+  address1?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  country?: string;
+  phone?: string;
+  website?: string;
+  industry_key?: string;
+  industry_disp?: string;
+  sector_key?: string;
+  sector_disp?: string;
+  long_business_summary?: string;
+  full_time_employees?: number;
+  audit_risk?: number;
+  board_risk?: number;
+  compensation_risk?: number;
+  shareholder_rights_risk?: number;
+  overall_risk?: number;
+  governance_epoch_date?: string;
+  compensation_as_of_epoch_date?: string;
+  ir_website?: string;
   price: number;
   prev_close: number;
   open: number;
@@ -30,6 +51,9 @@ export interface Security {
   fifty_day_average: number;
   two_hundred_day_average: number;
   ex_dividend_date: string;
+  operating_cash_flow: number;
+  free_cash_flow: number;
+  cash_flow_growth: number;
   last_fetched: string;
 }
 

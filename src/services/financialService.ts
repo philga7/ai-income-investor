@@ -1,5 +1,5 @@
 import { yahooFinanceClient } from '@/lib/financial/api/yahoo/client';
-import type { QuoteSummary, Price, FinancialData, SummaryDetail, CashflowStatementHistory } from '@/lib/financial/api/yahoo/types';
+import type { QuoteSummary, Price, FinancialData, SummaryDetail, CashflowStatementHistory, AssetProfile } from '@/lib/financial/api/yahoo/types';
 import { 
   handleYahooFinanceError, 
   validateResponse, 
@@ -12,6 +12,7 @@ export interface SecurityQuote {
   financialData: FinancialData;
   summaryDetail: SummaryDetail;
   cashflowStatementHistory?: CashflowStatementHistory;
+  assetProfile?: AssetProfile;
 }
 
 export interface HistoricalDataPoint {
@@ -63,7 +64,8 @@ class FinancialService {
         'price',
         'financialData',
         'summaryDetail',
-        'cashflowStatementHistory'
+        'cashflowStatementHistory',
+        'assetProfile'
       ]);
 
       // Validate required fields
@@ -74,13 +76,15 @@ class FinancialService {
       const financialData = quoteSummary.financialData as FinancialData;
       const summaryDetail = quoteSummary.summaryDetail as SummaryDetail;
       const cashflowStatementHistory = quoteSummary.cashflowStatementHistory;
+      const assetProfile = quoteSummary.assetProfile;
 
       return {
         symbol,
         price,
         financialData,
         summaryDetail,
-        cashflowStatementHistory
+        cashflowStatementHistory,
+        assetProfile
       };
     } catch (error) {
       if (error instanceof DataValidationError) {

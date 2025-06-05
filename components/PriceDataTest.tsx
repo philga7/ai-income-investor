@@ -205,6 +205,64 @@ export function PriceDataTest() {
                 </div>
               </div>
             </div>
+
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-semibold mb-2">Asset Profile</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium">Sector</p>
+                  <p className="text-lg">{priceData.assetProfile?.sector || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Industry</p>
+                  <p className="text-lg">{priceData.assetProfile?.industry || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Website</p>
+                  <p className="text-lg">
+                    {priceData.assetProfile?.website ? (
+                      <a href={priceData.assetProfile.website} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                        {priceData.assetProfile.website}
+                      </a>
+                    ) : 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Full Time Employees</p>
+                  <p className="text-lg">{priceData.assetProfile?.fullTimeEmployees?.toLocaleString() || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Address</p>
+                  <p className="text-lg">
+                    {[
+                      priceData.assetProfile?.address1,
+                      priceData.assetProfile?.city,
+                      priceData.assetProfile?.state,
+                      priceData.assetProfile?.zip,
+                      priceData.assetProfile?.country
+                    ].filter(Boolean).join(', ') || 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Phone</p>
+                  <p className="text-lg">{priceData.assetProfile?.phone || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Business Summary</p>
+                  <p className="text-lg line-clamp-3">{priceData.assetProfile?.longBusinessSummary || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Risk Metrics</p>
+                  <div className="space-y-1">
+                    <p>Audit Risk: {priceData.assetProfile?.auditRisk || 'N/A'}</p>
+                    <p>Board Risk: {priceData.assetProfile?.boardRisk || 'N/A'}</p>
+                    <p>Compensation Risk: {priceData.assetProfile?.compensationRisk || 'N/A'}</p>
+                    <p>Shareholder Rights Risk: {priceData.assetProfile?.shareHolderRightsRisk || 'N/A'}</p>
+                    <p>Overall Risk: {priceData.assetProfile?.overallRisk || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>

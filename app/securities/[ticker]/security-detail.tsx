@@ -23,7 +23,6 @@ import { useState, useEffect } from "react";
 import { dividendService } from "@/services/dividendService";
 import { supabase } from "@/lib/supabase";
 import { BreadcrumbNav } from '@/components/ui/breadcrumb';
-import { yahooFinanceClient } from '@/lib/financial/api/yahoo/client';
 import { toast } from 'sonner';
 
 interface Security {
@@ -88,8 +87,10 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
         });
         
         if (!response.ok) {
-          throw new Error('Failed to fetch security data');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch security data');
         }
+        
         const quoteSummary = await response.json();
         
         if (!quoteSummary) {

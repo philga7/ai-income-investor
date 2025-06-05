@@ -15,12 +15,41 @@ export interface QuoteSummary {
 }
 
 export interface AssetProfile {
-  sector?: string;
-  industry?: string;
-  website?: string;
-  businessSummary?: string;
+  address1?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
   country?: string;
+  phone?: string;
+  website?: string;
+  industry?: string;
+  industryKey?: string;
+  industryDisp?: string;
+  sector?: string;
+  sectorKey?: string;
+  sectorDisp?: string;
+  longBusinessSummary?: string;
   fullTimeEmployees?: number;
+  companyOfficers?: Array<{
+    name?: string;
+    age?: number;
+    title?: string;
+    yearBorn?: number;
+    fiscalYear?: number;
+    totalPay?: number;
+    exercisedValue?: number;
+    unexercisedValue?: number;
+  }>;
+  auditRisk?: number;
+  boardRisk?: number;
+  compensationRisk?: number;
+  shareHolderRightsRisk?: number;
+  overallRisk?: number;
+  governanceEpochDate?: number;
+  compensationAsOfEpochDate?: number;
+  irWebsite?: string;
+  executiveTeam?: Array<any>;
+  maxAge?: number;
 }
 
 export interface BalanceSheetHistory {
