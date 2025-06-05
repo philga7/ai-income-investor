@@ -73,3 +73,24 @@ jest.mock('@/lib/supabase', () => ({
     },
   },
 }));
+
+// Store original console methods
+const originalConsole = {
+  warn: console.warn,
+  error: console.error,
+  log: console.log
+};
+
+// Suppress console output during tests
+beforeAll(() => {
+  console.warn = jest.fn();
+  console.error = jest.fn();
+  console.log = jest.fn();
+});
+
+// Restore console methods after all tests
+afterAll(() => {
+  console.warn = originalConsole.warn;
+  console.error = originalConsole.error;
+  console.log = originalConsole.log;
+});

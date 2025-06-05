@@ -1,6 +1,6 @@
 import yahooFinance from 'yahoo-finance2';
 import { YAHOO_FINANCE_CONFIG, YahooFinanceModule } from './config';
-import type { QuoteSummary, YahooFinanceError, BalanceSheetStatement, CashflowStatement, Earnings, Price, SummaryDetail, FinancialData } from './types';
+import type { QuoteSummary, YahooFinanceError, BalanceSheetStatement, CashflowStatement, Earnings, Price, SummaryDetail, FinancialData, AssetProfile } from './types';
 
 class YahooFinanceClient {
   private static instance: YahooFinanceClient;
@@ -181,6 +181,46 @@ class YahooFinanceClient {
     };
   }
 
+  private transformAssetProfile(profile: any): AssetProfile {
+    return {
+      address1: profile.address1,
+      city: profile.city,
+      state: profile.state,
+      zip: profile.zip,
+      country: profile.country,
+      phone: profile.phone,
+      website: profile.website,
+      industry: profile.industry,
+      industryKey: profile.industryKey,
+      industryDisp: profile.industryDisp,
+      sector: profile.sector,
+      sectorKey: profile.sectorKey,
+      sectorDisp: profile.sectorDisp,
+      longBusinessSummary: profile.longBusinessSummary,
+      fullTimeEmployees: profile.fullTimeEmployees,
+      companyOfficers: profile.companyOfficers?.map((officer: any) => ({
+        name: officer.name,
+        age: officer.age,
+        title: officer.title,
+        yearBorn: officer.yearBorn,
+        fiscalYear: officer.fiscalYear,
+        totalPay: officer.totalPay,
+        exercisedValue: officer.exercisedValue,
+        unexercisedValue: officer.unexercisedValue
+      })),
+      auditRisk: profile.auditRisk,
+      boardRisk: profile.boardRisk,
+      compensationRisk: profile.compensationRisk,
+      shareHolderRightsRisk: profile.shareHolderRightsRisk,
+      overallRisk: profile.overallRisk,
+      governanceEpochDate: profile.governanceEpochDate?.getTime(),
+      compensationAsOfEpochDate: profile.compensationAsOfEpochDate?.getTime(),
+      irWebsite: profile.irWebsite,
+      executiveTeam: profile.executiveTeam,
+      maxAge: profile.maxAge
+    };
+  }
+
   public async getQuoteSummary(
     symbol: string,
     modules: readonly YahooFinanceModule[] = YAHOO_FINANCE_CONFIG.defaultModules
@@ -204,6 +244,7 @@ class YahooFinanceClient {
       // Transform the result to match our QuoteSummary type
       const transformedResult: QuoteSummary = {
         ...result,
+        assetProfile: result.assetProfile ? this.transformAssetProfile(result.assetProfile) : undefined,
         balanceSheetHistory: result.balanceSheetHistory ? {
           balanceSheetStatements: result.balanceSheetHistory.balanceSheetStatements.map(stmt => 
             this.transformBalanceSheetStatement(stmt)
