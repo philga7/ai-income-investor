@@ -112,6 +112,38 @@ export const securityService = {
         operating_cash_flow: quoteSummary.financialData?.operatingCashflow || 0,
         free_cash_flow: quoteSummary.financialData?.freeCashflow || 0,
         cash_flow_growth: quoteSummary.cashflowStatementHistory?.cashflowStatements[0]?.totalCashFromOperatingActivities || 0,
+        earnings: quoteSummary.earnings ? {
+          maxAge: quoteSummary.earnings.maxAge,
+          earningsDate: quoteSummary.earnings.earningsDate,
+          earningsAverage: quoteSummary.earnings.earningsAverage,
+          earningsLow: quoteSummary.earnings.earningsLow,
+          earningsHigh: quoteSummary.earnings.earningsHigh,
+          earningsChart: {
+            quarterly: quoteSummary.earnings.earningsChart.quarterly.map(q => ({
+              date: q.date,
+              actual: q.actual,
+              estimate: q.estimate
+            })),
+            currentQuarterEstimate: quoteSummary.earnings.earningsChart.currentQuarterEstimate,
+            currentQuarterEstimateDate: quoteSummary.earnings.earningsChart.currentQuarterEstimateDate,
+            currentQuarterEstimateYear: quoteSummary.earnings.earningsChart.currentQuarterEstimateYear,
+            earningsDate: quoteSummary.earnings.earningsChart.earningsDate,
+            isEarningsDateEstimate: quoteSummary.earnings.earningsChart.isEarningsDateEstimate
+          },
+          financialsChart: {
+            yearly: quoteSummary.earnings.financialsChart.yearly.map(y => ({
+              date: y.date,
+              revenue: y.revenue,
+              earnings: y.earnings
+            })),
+            quarterly: quoteSummary.earnings.financialsChart.quarterly.map(q => ({
+              date: q.date,
+              revenue: q.revenue,
+              earnings: q.earnings
+            }))
+          },
+          financialCurrency: quoteSummary.earnings.financialCurrency
+        } : undefined,
         last_fetched: new Date().toISOString()
       };
     } catch (error) {
@@ -171,6 +203,7 @@ export const securityService = {
           operating_cash_flow: updatedData.operating_cash_flow,
           free_cash_flow: updatedData.free_cash_flow,
           cash_flow_growth: updatedData.cash_flow_growth,
+          earnings: updatedData.earnings,
           last_fetched: new Date().toISOString()
         })
         .eq('id', securityId)

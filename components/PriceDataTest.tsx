@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { SecurityQuote } from '../src/services/financialService';
+import { supabase } from '@/lib/supabase';
 
 export function PriceDataTest() {
   const [symbol, setSymbol] = useState('');
@@ -16,10 +17,24 @@ export function PriceDataTest() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`/api/quotes?symbol=${encodeURIComponent(symbol)}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch price data');
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('Please sign in to fetch price data');
       }
+
+      const response = await fetch(`/api/quotes?symbol=${encodeURIComponent(symbol)}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to fetch price data');
+      }
+
       const data = await response.json();
       setPriceData(data);
     } catch (err) {
@@ -202,6 +217,86 @@ export function PriceDataTest() {
                       ? `$${(priceData.cashflowStatementHistory.cashflowStatements[0].capitalExpenditures).toLocaleString()}`
                       : 'N/A'}
                   </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-4">
+              <h3 className="text-lg font-semibold mb-2">Earnings</h3>
+              <div className="space-y-4">
+                {/* Next Earnings */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h4 className="font-medium mb-2">Next Earnings</h4>
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-gray-600">
+                        {priceData.earnings?.earningsChart?.currentQuarterEstimateDate} {priceData.earnings?.earningsChart?.currentQuarterEstimateYear}
+                      </p>
+                      <p className="text-sm text-gray-500">Estimate: ${priceData.earnings?.earningsChart?.currentQuarterEstimate.toFixed(2)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-500">Range</p>
+                      <p className="font-medium">
+                        ${priceData.earnings?.earningsLow.toFixed(2)} - ${priceData.earnings?.earningsHigh.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quarterly Financials */}
+                <div>
+                  <h4 className="font-medium mb-2">Quarterly Financials</h4>
+                  <div className="space-y-2">
+                    {priceData.earnings?.financialsChart?.quarterly.slice(0, 4).map((quarter, index) => (
+                      <div key={index} className="flex justify-between items-center border-b pb-2">
+                        <span className="text-gray-600">
+                          {new Date(quarter.date).toLocaleDateString()}
+                        </span>
+                        <div className="text-right">
+                          <p className="font-medium">${quarter.earnings.toFixed(2)}</p>
+                          <p className="text-sm text-gray-500">Revenue: ${quarter.revenue.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Annual Financials */}
+                <div>
+                  <h4 className="font-medium mb-2">Annual Financials</h4>
+                  <div className="space-y-2">
+                    {priceData.earnings?.financialsChart?.yearly.slice(0, 4).map((year, index) => (
+                      <div key={index} className="flex justify-between items-center border-b pb-2">
+                        <span className="text-gray-600">
+                          {new Date(year.date).getFullYear()}
+                        </span>
+                        <div className="text-right">
+                          <p className="font-medium">${year.earnings.toFixed(2)}</p>
+                          <p className="text-sm text-gray-500">Revenue: ${year.revenue.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Historical Earnings */}
+                <div>
+                  <h4 className="font-medium mb-2">Historical Earnings</h4>
+                  <div className="space-y-2">
+                    {priceData.earnings?.earningsChart?.quarterly.slice(0, 4).map((earning, index) => (
+                      <div key={index} className="flex justify-between items-center border-b pb-2">
+                        <span className="text-gray-600">
+                          {new Date(earning.date).toLocaleDateString()}
+                        </span>
+                        <div className="text-right">
+                          <p className={`font-medium ${earning.actual >= earning.estimate ? 'text-green-600' : 'text-red-600'}`}>
+                            ${earning.actual.toFixed(2)}
+                          </p>
+                          <p className="text-sm text-gray-500">Estimate: ${earning.estimate.toFixed(2)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

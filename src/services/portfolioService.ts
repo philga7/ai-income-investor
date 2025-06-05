@@ -54,6 +54,38 @@ export interface Security {
   operating_cash_flow: number;
   free_cash_flow: number;
   cash_flow_growth: number;
+  earnings?: {
+    maxAge: number;
+    earningsDate: number[];
+    earningsAverage: number;
+    earningsLow: number;
+    earningsHigh: number;
+    earningsChart: {
+      quarterly: {
+        date: number;
+        actual: number;
+        estimate: number;
+      }[];
+      currentQuarterEstimate: number;
+      currentQuarterEstimateDate: string;
+      currentQuarterEstimateYear: number;
+      earningsDate: number[];
+      isEarningsDateEstimate: boolean;
+    };
+    financialsChart: {
+      yearly: {
+        date: number;
+        revenue: number;
+        earnings: number;
+      }[];
+      quarterly: {
+        date: number;
+        revenue: number;
+        earnings: number;
+      }[];
+    };
+    financialCurrency: string;
+  };
   last_fetched: string;
 }
 
