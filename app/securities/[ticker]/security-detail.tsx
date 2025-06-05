@@ -57,6 +57,33 @@ interface Security {
   operating_cash_flow: number;
   free_cash_flow: number;
   cash_flow_growth: number;
+  ebitda_margins: number;
+  // Balance sheet fields
+  total_assets: number;
+  total_current_assets: number;
+  total_liabilities: number;
+  total_current_liabilities: number;
+  total_stockholder_equity: number;
+  cash: number;
+  short_term_investments: number;
+  net_receivables: number;
+  inventory: number;
+  other_current_assets: number;
+  long_term_investments: number;
+  property_plant_equipment: number;
+  other_assets: number;
+  intangible_assets: number;
+  goodwill: number;
+  accounts_payable: number;
+  short_long_term_debt: number;
+  other_current_liabilities: number;
+  long_term_debt: number;
+  other_liabilities: number;
+  minority_interest: number;
+  treasury_stock: number;
+  retained_earnings: number;
+  common_stock: number;
+  capital_surplus: number;
   earnings?: {
     maxAge: number;
     earningsDate: number[];
@@ -120,13 +147,19 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
         
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to fetch security data');
+          console.error('API response error:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData
+          });
+          throw new Error(errorData.error || `Failed to fetch security data: ${response.statusText}`);
         }
         
         const quoteSummary = await response.json();
         
         if (!quoteSummary) {
           console.error('No data returned from API for ticker:', ticker);
+          toast.error('No data available for this security');
           return;
         }
 
@@ -145,35 +178,31 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
         const sma200 = price > (quoteSummary.summaryDetail?.twoHundredDayAverage || 0) ? 'above' : 'below';
         const dayLow = quoteSummary.price?.regularMarketDayLow || 0;
         const dayHigh = quoteSummary.price?.regularMarketDayHigh || 0;
-        const fiftyTwoWeekLow = quoteSummary.price?.fiftyTwoWeekLow || 0;
-        const fiftyTwoWeekHigh = quoteSummary.price?.fiftyTwoWeekHigh || 0;
-        const averageVolume = quoteSummary.price?.regularMarketAverageVolume || 0;
+        const fiftyTwoWeekLow = quoteSummary.summaryDetail?.fiftyTwoWeekLow || 0;
+        const fiftyTwoWeekHigh = quoteSummary.summaryDetail?.fiftyTwoWeekHigh || 0;
+        const averageVolume = quoteSummary.summaryDetail?.averageVolume || 0;
         const forwardPE = quoteSummary.summaryDetail?.forwardPE || 0;
         const priceToSalesTrailing12Months = quoteSummary.summaryDetail?.priceToSalesTrailing12Months || 0;
         const beta = quoteSummary.summaryDetail?.beta || 0;
-        const fiftyDayAverage = quoteSummary.price?.fiftyDayAverage || 0;
-        const twoHundredDayAverage = quoteSummary.price?.twoHundredDayAverage || 0;
-        
+        const fiftyDayAverage = quoteSummary.summaryDetail?.fiftyDayAverage || 0;
+        const twoHundredDayAverage = quoteSummary.summaryDetail?.twoHundredDayAverage || 0;
+
         // Format date to ISO string with timezone for PostgreSQL TIMESTAMP WITH TIME ZONE
         const formatDate = (timestamp: number | undefined) => {
           if (!timestamp) return null;
           try {
-            // First check if the timestamp is a valid number
             if (isNaN(timestamp)) {
               console.warn('Invalid timestamp:', timestamp);
               return null;
             }
 
-            // Convert Unix timestamp to milliseconds
             const date = new Date(timestamp * 1000);
             
-            // Check if the date is valid
             if (isNaN(date.getTime())) {
               console.warn('Invalid date from timestamp:', timestamp);
               return null;
             }
 
-            // Format as UTC date string (YYYY-MM-DD)
             const year = date.getUTCFullYear();
             const month = String(date.getUTCMonth() + 1).padStart(2, '0');
             const day = String(date.getUTCDate()).padStart(2, '0');
@@ -188,117 +217,229 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
         const exDividendDate = formatDate(quoteSummary.summaryDetail?.exDividendDate);
         const currentDate = new Date().toISOString().split('T')[0];
 
-        // Update or insert into database
-        const { data: securityData, error } = await supabase
-          .from('securities')
-          .upsert({
+        // Prepare the data for upsert
+        const securityData = {
+          ticker,
+          name: quoteSummary.price?.longName || quoteSummary.price?.shortName || ticker,
+          sector: quoteSummary.assetProfile?.sector || 'Unknown',
+          industry: quoteSummary.assetProfile?.industry || 'Unknown',
+          price,
+          prev_close: prevClose,
+          open,
+          volume,
+          market_cap: marketCap,
+          pe,
+          eps,
+          dividend,
+          yield: dividendYield,
+          dividend_growth_5yr,
+          payout_ratio: payoutRatio,
+          sma200,
+          day_low: dayLow,
+          day_high: dayHigh,
+          fifty_two_week_low: fiftyTwoWeekLow,
+          fifty_two_week_high: fiftyTwoWeekHigh,
+          average_volume: averageVolume,
+          forward_pe: forwardPE,
+          price_to_sales_trailing_12_months: priceToSalesTrailing12Months,
+          beta,
+          fifty_day_average: fiftyDayAverage,
+          two_hundred_day_average: twoHundredDayAverage,
+          ex_dividend_date: exDividendDate,
+          // Add financial data fields
+          target_low_price: quoteSummary.financialData?.targetLowPrice,
+          target_high_price: quoteSummary.financialData?.targetHighPrice,
+          recommendation_key: quoteSummary.financialData?.recommendationKey,
+          number_of_analyst_opinions: quoteSummary.financialData?.numberOfAnalystOpinions,
+          total_cash: quoteSummary.financialData?.totalCash,
+          total_debt: quoteSummary.financialData?.totalDebt,
+          current_ratio: quoteSummary.financialData?.currentRatio,
+          quick_ratio: quoteSummary.financialData?.quickRatio,
+          debt_to_equity: quoteSummary.financialData?.debtToEquity,
+          revenue_per_share: quoteSummary.financialData?.revenuePerShare,
+          return_on_assets: quoteSummary.financialData?.returnOnAssets,
+          return_on_equity: quoteSummary.financialData?.returnOnEquity,
+          gross_profits: quoteSummary.financialData?.grossProfits,
+          earnings_growth: quoteSummary.financialData?.earningsGrowth,
+          revenue_growth: quoteSummary.financialData?.revenueGrowth,
+          gross_margins: quoteSummary.financialData?.grossMargins,
+          ebitda_margins: quoteSummary.financialData?.ebitdaMargins,
+          operating_margins: quoteSummary.financialData?.operatingMargins,
+          profit_margins: quoteSummary.financialData?.profitMargins,
+          // Add balance sheet fields
+          total_assets: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.totalAssets,
+          total_current_assets: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.totalCurrentAssets,
+          total_liabilities: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.totalLiab,
+          total_current_liabilities: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.totalCurrentLiabilities,
+          total_stockholder_equity: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.totalStockholderEquity,
+          cash: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.cash,
+          short_term_investments: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.shortTermInvestments,
+          net_receivables: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.netReceivables,
+          inventory: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.inventory,
+          other_current_assets: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.otherCurrentAssets,
+          long_term_investments: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.longTermInvestments,
+          property_plant_equipment: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.propertyPlantEquipment,
+          other_assets: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.otherAssets,
+          intangible_assets: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.intangibleAssets,
+          goodwill: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.goodwill,
+          accounts_payable: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.accountsPayable,
+          short_long_term_debt: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.shortLongTermDebt,
+          other_current_liabilities: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.otherCurrentLiab,
+          long_term_debt: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.longTermDebt,
+          other_liabilities: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.otherLiab,
+          minority_interest: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.minorityInterest,
+          treasury_stock: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.treasuryStock,
+          retained_earnings: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.retainedEarnings,
+          common_stock: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.commonStock,
+          capital_surplus: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.capitalSurplus,
+          last_fetched: currentDate
+        };
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Attempting to upsert security data:', {
             ticker,
-            name: quoteSummary.price?.longName || quoteSummary.price?.shortName || ticker,
-            sector: quoteSummary.assetProfile?.sector || 'Unknown',
-            industry: quoteSummary.assetProfile?.industry || 'Unknown',
-            price,
-            prev_close: prevClose,
-            open,
-            volume,
-            market_cap: marketCap,
-            pe,
-            eps,
-            dividend,
-            yield: dividendYield,
-            dividend_growth_5yr,
-            payout_ratio: payoutRatio,
-            sma200,
-            day_low: dayLow,
-            day_high: dayHigh,
-            fifty_two_week_low: fiftyTwoWeekLow,
-            fifty_two_week_high: fiftyTwoWeekHigh,
-            average_volume: averageVolume,
-            forward_pe: forwardPE,
-            price_to_sales_trailing_12_months: priceToSalesTrailing12Months,
-            beta,
-            fifty_day_average: fiftyDayAverage,
-            two_hundred_day_average: twoHundredDayAverage,
-            ex_dividend_date: exDividendDate,
-            // Add financial data fields
-            target_low_price: quoteSummary.financialData?.targetLowPrice,
-            target_high_price: quoteSummary.financialData?.targetHighPrice,
-            recommendation_key: quoteSummary.financialData?.recommendationKey,
-            number_of_analyst_opinions: quoteSummary.financialData?.numberOfAnalystOpinions,
-            total_cash: quoteSummary.financialData?.totalCash,
-            total_debt: quoteSummary.financialData?.totalDebt,
-            current_ratio: quoteSummary.financialData?.currentRatio,
-            quick_ratio: quoteSummary.financialData?.quickRatio,
-            debt_to_equity: quoteSummary.financialData?.debtToEquity,
-            return_on_equity: quoteSummary.financialData?.returnOnEquity,
-            profit_margins: quoteSummary.financialData?.profitMargins,
-            operating_margins: quoteSummary.financialData?.operatingMargins,
-            revenue_growth: quoteSummary.financialData?.revenueGrowth,
-            earnings_growth: quoteSummary.financialData?.earningsGrowth,
-            // Add cash flow data
-            operating_cash_flow: quoteSummary.financialData?.operatingCashflow,
-            free_cash_flow: quoteSummary.financialData?.freeCashflow,
-            cash_flow_growth: quoteSummary.cashflowStatementHistory?.cashflowStatements[0]?.changeInCash,
-            // Add earnings data
-            earnings: quoteSummary.earnings ? {
-              maxAge: quoteSummary.earnings.maxAge,
-              earningsDate: quoteSummary.earnings.earningsDate,
-              earningsAverage: quoteSummary.earnings.earningsAverage,
-              earningsLow: quoteSummary.earnings.earningsLow,
-              earningsHigh: quoteSummary.earnings.earningsHigh,
-              earningsChart: {
-                quarterly: quoteSummary.earnings.earningsChart.quarterly.map((q: { date: number; actual: number; estimate: number }) => ({
-                  date: q.date,
-                  actual: q.actual,
-                  estimate: q.estimate
-                })),
-                currentQuarterEstimate: quoteSummary.earnings.earningsChart.currentQuarterEstimate,
-                currentQuarterEstimateDate: quoteSummary.earnings.earningsChart.currentQuarterEstimateDate,
-                currentQuarterEstimateYear: quoteSummary.earnings.earningsChart.currentQuarterEstimateYear,
-                earningsDate: quoteSummary.earnings.earningsChart.earningsDate,
-                isEarningsDateEstimate: quoteSummary.earnings.earningsChart.isEarningsDateEstimate
-              },
-              financialsChart: {
-                yearly: quoteSummary.earnings.financialsChart.yearly.map((y: { date: number; revenue: number; earnings: number }) => ({
-                  date: y.date,
-                  revenue: y.revenue,
-                  earnings: y.earnings
-                })),
-                quarterly: quoteSummary.earnings.financialsChart.quarterly.map((q: { date: number; revenue: number; earnings: number }) => ({
-                  date: q.date,
-                  revenue: q.revenue,
-                  earnings: q.earnings
-                }))
-              },
-              financialCurrency: quoteSummary.earnings.financialCurrency
-            } : null,
-            last_fetched: currentDate
-          }, {
+            dataKeys: Object.keys(securityData)
+          });
+        }
+
+        // Update or insert into database
+        const { data: dbSecurityData, error: upsertError } = await supabase
+          .from('securities')
+          .upsert(securityData, {
             onConflict: 'ticker',
             ignoreDuplicates: false
           })
           .select()
           .single();
 
-        if (error) {
-          console.error('Error updating security data:', error);
-          toast.error('Failed to update security data');
+        if (upsertError) {
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error updating security data:', {
+              error: upsertError,
+              code: upsertError.code,
+              message: upsertError.message,
+              details: upsertError.details,
+              hint: upsertError.hint
+            });
+          }
+          throw new Error(`Failed to update security data: ${upsertError.message}`);
+        }
+
+        if (!dbSecurityData) {
+          console.error('No security data returned after upsert');
+          toast.error('Failed to save security data');
           return;
         }
 
-        setSecurity(securityData);
+        // Transform the data to match our Security interface
+        const transformedSecurity: Security = {
+          id: dbSecurityData.id,
+          ticker: dbSecurityData.ticker,
+          name: dbSecurityData.name,
+          sector: dbSecurityData.sector,
+          industry: dbSecurityData.industry,
+          price: dbSecurityData.price,
+          prevClose: dbSecurityData.prev_close,
+          open: dbSecurityData.open,
+          volume: dbSecurityData.volume,
+          marketCap: dbSecurityData.market_cap,
+          pe: dbSecurityData.pe,
+          eps: dbSecurityData.eps,
+          dividend: dbSecurityData.dividend,
+          yield: dbSecurityData.yield,
+          dividend_growth_5yr: dbSecurityData.dividend_growth_5yr,
+          payoutRatio: dbSecurityData.payout_ratio,
+          sma200: dbSecurityData.sma200,
+          dayLow: dbSecurityData.day_low,
+          dayHigh: dbSecurityData.day_high,
+          fiftyTwoWeekLow: dbSecurityData.fifty_two_week_low,
+          fiftyTwoWeekHigh: dbSecurityData.fifty_two_week_high,
+          averageVolume: dbSecurityData.average_volume,
+          forwardPE: dbSecurityData.forward_pe,
+          priceToSalesTrailing12Months: dbSecurityData.price_to_sales_trailing_12_months,
+          beta: dbSecurityData.beta,
+          fiftyDayAverage: dbSecurityData.fifty_day_average,
+          twoHundredDayAverage: dbSecurityData.two_hundred_day_average,
+          exDividendDate: dbSecurityData.ex_dividend_date,
+          operating_cash_flow: dbSecurityData.operating_cash_flow,
+          free_cash_flow: dbSecurityData.free_cash_flow,
+          cash_flow_growth: dbSecurityData.cash_flow_growth,
+          ebitda_margins: dbSecurityData.ebitda_margins,
+          // Add balance sheet fields
+          total_assets: dbSecurityData.total_assets,
+          total_current_assets: dbSecurityData.total_current_assets,
+          total_liabilities: dbSecurityData.total_liabilities,
+          total_current_liabilities: dbSecurityData.total_current_liabilities,
+          total_stockholder_equity: dbSecurityData.total_stockholder_equity,
+          cash: dbSecurityData.cash,
+          short_term_investments: dbSecurityData.short_term_investments,
+          net_receivables: dbSecurityData.net_receivables,
+          inventory: dbSecurityData.inventory,
+          other_current_assets: dbSecurityData.other_current_assets,
+          long_term_investments: dbSecurityData.long_term_investments,
+          property_plant_equipment: dbSecurityData.property_plant_equipment,
+          other_assets: dbSecurityData.other_assets,
+          intangible_assets: dbSecurityData.intangible_assets,
+          goodwill: dbSecurityData.goodwill,
+          accounts_payable: dbSecurityData.accounts_payable,
+          short_long_term_debt: dbSecurityData.short_long_term_debt,
+          other_current_liabilities: dbSecurityData.other_current_liabilities,
+          long_term_debt: dbSecurityData.long_term_debt,
+          other_liabilities: dbSecurityData.other_liabilities,
+          minority_interest: dbSecurityData.minority_interest,
+          treasury_stock: dbSecurityData.treasury_stock,
+          retained_earnings: dbSecurityData.retained_earnings,
+          common_stock: dbSecurityData.common_stock,
+          capital_surplus: dbSecurityData.capital_surplus,
+          earnings: quoteSummary.earnings ? {
+            maxAge: quoteSummary.earnings.maxAge,
+            earningsDate: quoteSummary.earnings.earningsDate,
+            earningsAverage: quoteSummary.earnings.earningsAverage,
+            earningsLow: quoteSummary.earnings.earningsLow,
+            earningsHigh: quoteSummary.earnings.earningsHigh,
+            earningsChart: {
+              quarterly: quoteSummary.earnings.earningsChart.quarterly.map((q: { date: number; actual: number; estimate: number }) => ({
+                date: q.date,
+                actual: q.actual,
+                estimate: q.estimate
+              })),
+              currentQuarterEstimate: quoteSummary.earnings.earningsChart.currentQuarterEstimate,
+              currentQuarterEstimateDate: quoteSummary.earnings.earningsChart.currentQuarterEstimateDate,
+              currentQuarterEstimateYear: quoteSummary.earnings.earningsChart.currentQuarterEstimateYear,
+              earningsDate: quoteSummary.earnings.earningsChart.earningsDate,
+              isEarningsDateEstimate: quoteSummary.earnings.earningsChart.isEarningsDateEstimate
+            },
+            financialsChart: {
+              yearly: quoteSummary.earnings.financialsChart.yearly.map((y: { date: number; revenue: number; earnings: number }) => ({
+                date: y.date,
+                revenue: y.revenue,
+                earnings: y.earnings
+              })),
+              quarterly: quoteSummary.earnings.financialsChart.quarterly.map((q: { date: number; revenue: number; earnings: number }) => ({
+                date: q.date,
+                revenue: q.revenue,
+                earnings: q.earnings
+              }))
+            },
+            financialCurrency: quoteSummary.earnings.financialCurrency
+          } : undefined
+        };
 
-        if (securityData.id) {
+        setSecurity(transformedSecurity);
+
+        if (dbSecurityData.id) {
+          // Fetch next dividend if available
           try {
-            const dividend = await dividendService.getNextDividendDates(securityData.id);
-            setNextDividend(dividend);
+            const nextDividendData = await dividendService.getNextDividendDates(dbSecurityData.id);
+            setNextDividend(nextDividendData);
           } catch (error) {
-            console.error('Error fetching dividend data:', error);
-            setNextDividend(null);
+            console.error('Error fetching next dividend:', error);
+            // Don't throw here, as this is not critical
           }
         }
       } catch (error) {
-        console.error('Error loading security data:', error);
-        toast.error('Failed to load security data');
+        console.error('Error in loadData:', error);
+        toast.error(error instanceof Error ? error.message : 'Failed to load security data');
       } finally {
         setLoading(false);
       }
@@ -587,6 +728,72 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
                 </div>
               </CardContent>
             </Card>
+          </div>
+          {/* Balance Sheet Data */}
+          <div>
+            <h4 className="font-medium mb-2">Balance Sheet</h4>
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h5 className="text-sm font-medium text-gray-600 mb-2">Assets</h5>
+                  <div className="space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Total Assets</span>
+                      <span className="text-sm font-medium">${formatCurrency(security.total_assets)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Total Current Assets</span>
+                      <span className="text-sm font-medium">${formatCurrency(security.total_current_assets)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Cash</span>
+                      <span className="text-sm font-medium">${formatCurrency(security.cash)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Short Term Investments</span>
+                      <span className="text-sm font-medium">${formatCurrency(security.short_term_investments)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Net Receivables</span>
+                      <span className="text-sm font-medium">${formatCurrency(security.net_receivables)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Inventory</span>
+                      <span className="text-sm font-medium">${formatCurrency(security.inventory)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h5 className="text-sm font-medium text-gray-600 mb-2">Liabilities & Equity</h5>
+                  <div className="space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Total Liabilities</span>
+                      <span className="text-sm font-medium">${formatCurrency(security.total_liabilities)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Total Current Liabilities</span>
+                      <span className="text-sm font-medium">${formatCurrency(security.total_current_liabilities)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Total Stockholder Equity</span>
+                      <span className="text-sm font-medium">${formatCurrency(security.total_stockholder_equity)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Long Term Debt</span>
+                      <span className="text-sm font-medium">${formatCurrency(security.long_term_debt)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Retained Earnings</span>
+                      <span className="text-sm font-medium">${formatCurrency(security.retained_earnings)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Common Stock</span>
+                      <span className="text-sm font-medium">${formatCurrency(security.common_stock)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

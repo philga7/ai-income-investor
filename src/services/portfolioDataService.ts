@@ -57,6 +57,53 @@ interface DatabaseSecurity {
   operating_cash_flow: number;
   free_cash_flow: number;
   cash_flow_growth: number;
+  target_low_price?: number;
+  target_high_price?: number;
+  recommendation_key?: string;
+  number_of_analyst_opinions?: number;
+  total_cash?: number;
+  total_debt?: number;
+  current_ratio?: number;
+  quick_ratio?: number;
+  debt_to_equity?: number;
+  revenue_per_share?: number;
+  return_on_assets?: number;
+  return_on_equity?: number;
+  gross_profits?: number;
+  earnings_growth?: number;
+  revenue_growth?: number;
+  gross_margins?: number;
+  ebitda_margins?: number;
+  operating_margins?: number;
+  profit_margins?: number;
+  // Balance sheet fields
+  total_assets?: number;
+  total_current_assets?: number;
+  total_liabilities?: number;
+  total_current_liabilities?: number;
+  total_stockholder_equity?: number;
+  cash?: number;
+  short_term_investments?: number;
+  net_receivables?: number;
+  inventory?: number;
+  other_current_assets?: number;
+  long_term_investments?: number;
+  property_plant_equipment?: number;
+  other_assets?: number;
+  intangible_assets?: number;
+  goodwill?: number;
+  accounts_payable?: number;
+  short_long_term_debt?: number;
+  other_current_liabilities?: number;
+  long_term_debt?: number;
+  other_liabilities?: number;
+  minority_interest?: number;
+  treasury_stock?: number;
+  retained_earnings?: number;
+  common_stock?: number;
+  capital_surplus?: number;
+  last_fetched?: string;
+  // Earnings data
   earnings?: {
     maxAge: number;
     earningsDate: number[];
@@ -89,7 +136,6 @@ interface DatabaseSecurity {
     };
     financialCurrency: string;
   };
-  last_fetched: string;
 }
 
 interface PortfolioSecurityRecord {
@@ -361,14 +407,14 @@ export const portfolioDataService = {
               pe: summaryDetail?.trailingPE || 0,
               eps: summaryDetail?.trailingPE || 0,
               dividend: summaryDetail?.dividendRate || 0,
-              yield: summaryDetail?.dividendYield ? summaryDetail.dividendYield * 100 : null,
+              yield: (summaryDetail?.dividendYield || 0) * 100,
               dividend_growth_5yr: summaryDetail?.fiveYearAvgDividendYield || 0,
               payout_ratio: summaryDetail?.payoutRatio || 0,
               sma200: (price?.regularMarketPrice || 0) > (summaryDetail?.twoHundredDayAverage || 0) ? 'above' : 'below',
               day_low: price?.regularMarketDayLow || 0,
               day_high: price?.regularMarketDayHigh || 0,
-              fifty_two_week_low: price?.regularMarketDayLow || 0,
-              fifty_two_week_high: price?.regularMarketDayHigh || 0,
+              fifty_two_week_low: summaryDetail?.fiftyTwoWeekLow || 0,
+              fifty_two_week_high: summaryDetail?.fiftyTwoWeekHigh || 0,
               average_volume: summaryDetail?.averageVolume || 0,
               forward_pe: summaryDetail?.forwardPE || 0,
               price_to_sales_trailing_12_months: summaryDetail?.priceToSalesTrailing12Months || 0,
@@ -376,9 +422,8 @@ export const portfolioDataService = {
               fifty_day_average: summaryDetail?.fiftyDayAverage || 0,
               two_hundred_day_average: summaryDetail?.twoHundredDayAverage || 0,
               ex_dividend_date: summaryDetail?.exDividendDate ? formatDate(summaryDetail.exDividendDate, 'ex_dividend_date') : null,
-              // Add financial data fields
-              target_low_price: financialData?.targetLowPrice || 0,
-              target_high_price: financialData?.targetHighPrice || 0,
+              target_low_price: financialData?.targetLowPrice || null,
+              target_high_price: financialData?.targetHighPrice || null,
               recommendation_key: financialData?.recommendationKey || null,
               number_of_analyst_opinions: financialData?.numberOfAnalystOpinions || 0,
               total_cash: financialData?.totalCash || 0,
@@ -395,39 +440,32 @@ export const portfolioDataService = {
               operating_cash_flow: financialData?.operatingCashflow,
               free_cash_flow: financialData?.freeCashflow,
               cash_flow_growth: cashflowStatementHistory?.cashflowStatements[0]?.totalCashFromOperatingActivities,
-              // Add earnings data
-              earnings: quoteSummary.earnings ? {
-                maxAge: quoteSummary.earnings.maxAge,
-                earningsDate: quoteSummary.earnings.earningsDate,
-                earningsAverage: quoteSummary.earnings.earningsAverage,
-                earningsLow: quoteSummary.earnings.earningsLow,
-                earningsHigh: quoteSummary.earnings.earningsHigh,
-                earningsChart: {
-                  quarterly: quoteSummary.earnings.earningsChart.quarterly.map((q: { date: number; actual: number; estimate: number }) => ({
-                    date: q.date,
-                    actual: q.actual,
-                    estimate: q.estimate
-                  })),
-                  currentQuarterEstimate: quoteSummary.earnings.earningsChart.currentQuarterEstimate,
-                  currentQuarterEstimateDate: quoteSummary.earnings.earningsChart.currentQuarterEstimateDate,
-                  currentQuarterEstimateYear: quoteSummary.earnings.earningsChart.currentQuarterEstimateYear,
-                  earningsDate: quoteSummary.earnings.earningsChart.earningsDate,
-                  isEarningsDateEstimate: quoteSummary.earnings.earningsChart.isEarningsDateEstimate
-                },
-                financialsChart: {
-                  yearly: quoteSummary.earnings.financialsChart.yearly.map((y: { date: number; revenue: number; earnings: number }) => ({
-                    date: y.date,
-                    revenue: y.revenue,
-                    earnings: y.earnings
-                  })),
-                  quarterly: quoteSummary.earnings.financialsChart.quarterly.map((q: { date: number; revenue: number; earnings: number }) => ({
-                    date: q.date,
-                    revenue: q.revenue,
-                    earnings: q.earnings
-                  }))
-                },
-                financialCurrency: quoteSummary.earnings.financialCurrency
-              } : null,
+              // Add balance sheet data
+              total_assets: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.totalAssets,
+              total_current_assets: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.totalCurrentAssets,
+              total_liabilities: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.totalLiab,
+              total_current_liabilities: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.totalCurrentLiabilities,
+              total_stockholder_equity: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.totalStockholderEquity,
+              cash: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.cash,
+              short_term_investments: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.shortTermInvestments,
+              net_receivables: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.netReceivables,
+              inventory: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.inventory,
+              other_current_assets: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.otherCurrentAssets,
+              long_term_investments: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.longTermInvestments,
+              property_plant_equipment: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.propertyPlantEquipment,
+              other_assets: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.otherAssets,
+              intangible_assets: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.intangibleAssets,
+              goodwill: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.goodwill,
+              accounts_payable: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.accountsPayable,
+              short_long_term_debt: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.shortLongTermDebt,
+              other_current_liabilities: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.otherCurrentLiab,
+              long_term_debt: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.longTermDebt,
+              other_liabilities: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.otherLiab,
+              minority_interest: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.minorityInterest,
+              treasury_stock: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.treasuryStock,
+              retained_earnings: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.retainedEarnings,
+              common_stock: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.commonStock,
+              capital_surplus: quoteSummary.balanceSheetHistory?.balanceSheetStatements[0]?.capitalSurplus,
               last_fetched: new Date().toISOString()
             })
             .eq('id', ps.security.id)

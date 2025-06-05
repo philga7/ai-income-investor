@@ -1,5 +1,5 @@
 import { yahooFinanceClient } from '@/lib/financial/api/yahoo/client';
-import type { QuoteSummary, Price, FinancialData, SummaryDetail, CashflowStatementHistory, AssetProfile, Earnings } from '@/lib/financial/api/yahoo/types';
+import type { QuoteSummary, Price, FinancialData, SummaryDetail, CashflowStatementHistory, AssetProfile, Earnings, BalanceSheetHistory } from '@/lib/financial/api/yahoo/types';
 import { 
   handleYahooFinanceError, 
   validateResponse, 
@@ -14,6 +14,7 @@ export interface SecurityQuote {
   cashflowStatementHistory?: CashflowStatementHistory;
   assetProfile?: AssetProfile;
   earnings?: Earnings;
+  balanceSheetHistory?: BalanceSheetHistory;
 }
 
 export interface HistoricalDataPoint {

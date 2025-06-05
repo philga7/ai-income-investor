@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 
-export interface Security {
+export type Security = {
   id: string;
   ticker: string;
   name: string;
@@ -54,6 +54,53 @@ export interface Security {
   operating_cash_flow: number;
   free_cash_flow: number;
   cash_flow_growth: number;
+  target_low_price?: number;
+  target_high_price?: number;
+  recommendation_key?: string;
+  number_of_analyst_opinions?: number;
+  total_cash?: number;
+  total_debt?: number;
+  current_ratio?: number;
+  quick_ratio?: number;
+  debt_to_equity?: number;
+  revenue_per_share?: number;
+  return_on_assets?: number;
+  return_on_equity?: number;
+  gross_profits?: number;
+  earnings_growth?: number;
+  revenue_growth?: number;
+  gross_margins?: number;
+  ebitda_margins?: number;
+  operating_margins?: number;
+  profit_margins?: number;
+  // Balance sheet fields
+  total_assets?: number;
+  total_current_assets?: number;
+  total_liabilities?: number;
+  total_current_liabilities?: number;
+  total_stockholder_equity?: number;
+  cash?: number;
+  short_term_investments?: number;
+  net_receivables?: number;
+  inventory?: number;
+  other_current_assets?: number;
+  long_term_investments?: number;
+  property_plant_equipment?: number;
+  other_assets?: number;
+  intangible_assets?: number;
+  goodwill?: number;
+  accounts_payable?: number;
+  short_long_term_debt?: number;
+  other_current_liabilities?: number;
+  long_term_debt?: number;
+  other_liabilities?: number;
+  minority_interest?: number;
+  treasury_stock?: number;
+  retained_earnings?: number;
+  common_stock?: number;
+  capital_surplus?: number;
+  last_fetched?: string;
+  // Earnings data
   earnings?: {
     maxAge: number;
     earningsDate: number[];
@@ -86,8 +133,7 @@ export interface Security {
     };
     financialCurrency: string;
   };
-  last_fetched: string;
-}
+};
 
 export interface PortfolioSecurity {
   id: string;
