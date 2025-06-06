@@ -2,8 +2,9 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
-  // Allow public access to the quotes API
-  if (request.nextUrl.pathname.startsWith('/api/quotes')) {
+  // Allow public access to the quotes API and historical data API
+  if (request.nextUrl.pathname.startsWith('/api/quotes') || 
+      request.nextUrl.pathname.startsWith('/api/historical')) {
     return NextResponse.next();
   }
 
