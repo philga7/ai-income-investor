@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { SecurityChart } from '@/components/securities/security-chart';
 import { TechnicalIndicators } from '@/components/securities/technical-indicators';
 import { DividendHistory } from '@/components/securities/dividend-history';
+import { AnalystRecommendations } from '@/components/securities/analyst-recommendations';
 import { BreadcrumbNav } from '@/components/ui/breadcrumb';
 
 interface SecurityDetailPageProps {
@@ -292,17 +293,37 @@ export default function SecurityDetailPage({ params }: SecurityDetailPageProps) 
           </TabsList>
           
           <TabsContent value="overview">
-            <Card>
-              <CardHeader>
-                <CardTitle>Stock Chart</CardTitle>
-                <CardDescription>
-                  6-month price history
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <SecurityChart ticker={security.security.ticker} />
-              </CardContent>
-            </Card>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+              <Card className="col-span-4">
+                <CardHeader>
+                  <CardTitle>Stock Chart</CardTitle>
+                  <CardDescription>
+                    6-month price history
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <SecurityChart ticker={security.security.ticker} />
+                </CardContent>
+              </Card>
+              <Card className="col-span-3">
+                <CardHeader>
+                  <CardTitle>Technical Indicators</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <TechnicalIndicators ticker={security.security.ticker} />
+                </CardContent>
+              </Card>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-4">
+              <Card className="col-span-1">
+                <CardHeader>
+                  <CardTitle>Analyst Recommendations</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <AnalystRecommendations symbol={security.security.ticker} />
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
           
           <TabsContent value="technical">
