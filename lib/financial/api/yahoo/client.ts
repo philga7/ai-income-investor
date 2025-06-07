@@ -1,6 +1,6 @@
 import yahooFinance from 'yahoo-finance2';
 import { YAHOO_FINANCE_CONFIG, YahooFinanceModule } from './config';
-import type { QuoteSummary, YahooFinanceError, BalanceSheetStatement, CashflowStatement, Earnings, Price, SummaryDetail, FinancialData, AssetProfile } from './types';
+import type { QuoteSummary, YahooFinanceError, BalanceSheetStatement, CashflowStatement, Earnings, Price, SummaryDetail, FinancialData, AssetProfile, SearchResult, YahooFinanceSearchResult, YahooFinanceSearchQuote } from './types';
 
 class YahooFinanceClient {
   private static instance: YahooFinanceClient;
@@ -355,12 +355,45 @@ class YahooFinanceClient {
     }
   }
 
-  public async search(query: string) {
+  public async search(query: string): Promise<SearchResult[] | null> {
     try {
-      return await yahooFinance.search(query);
+      const cacheKey = `search:${query}`;
+      const cached = this.getCachedData<SearchResult[]>(cacheKey);
+      if (cached) return cached;
+
+      const results = await yahooFinance.search(query, {
+        quotesCount: 10,
+        newsCount: 0,
+        enableFuzzyQuery: true,
+        quotesQueryId: 'tss_match_phrase_query',
+        multiQuoteQueryId: 'multi_quote_single_token_query',
+        enableCb: true,
+        enableNavLinks: true,
+        enableEnhancedTrivialQuery: true
+      });
+
+      if (!results || !results.quotes) {
+        return null;
+      }
+
+      const transformedResults = results.quotes
+        .filter((quote: any) => quote.isYahooFinance)
+        .map((quote: any) => ({
+          symbol: quote.symbol,
+          shortname: quote.shortname || '',
+          longname: quote.longname || '',
+          exchange: quote.exchange,
+          quoteType: quote.quoteType,
+          score: quote.score,
+          typeDisp: quote.typeDisp,
+          isYahooFinance: quote.isYahooFinance
+        }));
+
+      this.setCachedData(cacheKey, transformedResults);
+      return transformedResults;
     } catch (error) {
-      const yahooError = error as YahooFinanceError;
-      throw new Error(yahooError.message || YAHOO_FINANCE_CONFIG.errorMessages.serverError);
+      console.error('Error searching securities:', error);
+      return null;
     }
   }
 }
