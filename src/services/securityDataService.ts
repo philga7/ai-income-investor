@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Security } from './portfolioService';
-import { QuoteSummary } from '@/lib/financial/api/yahoo/types';
+import { QuoteSummary, SearchResult } from '@/lib/financial/api/yahoo/types';
 
 export type { Security };
 
@@ -281,6 +281,32 @@ export const securityService = {
       }));
     } catch (error) {
       console.error('Error in searchSecurities:', error);
+      return [];
+    }
+  },
+
+  async searchYahooFinance(query: string): Promise<SearchResult[]> {
+    try {
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('No active session');
+
+      // Fetch data from our API endpoint
+      const response = await fetch(`/api/securities/search?q=${encodeURIComponent(query)}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to search securities');
+      }
+
+      const results = await response.json() as SearchResult[];
+      return results || [];
+    } catch (error) {
+      console.error('Error searching securities:', error);
       return [];
     }
   }

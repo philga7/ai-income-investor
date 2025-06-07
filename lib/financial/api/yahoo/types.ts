@@ -225,4 +225,49 @@ export interface SummaryDetail {
   twoHundredDayAverage?: number;
   trailingAnnualDividendRate?: number;
   trailingAnnualDividendYield?: number;
+}
+
+export interface SearchResult {
+  symbol: string;
+  shortname: string;
+  longname: string;
+  exchange: string;
+  quoteType: string;
+  score: number;
+  typeDisp: string;
+  isYahooFinance: boolean;
+}
+
+export interface YahooFinanceSearchQuote {
+  exchange: string;
+  shortname?: string;
+  quoteType: string;
+  symbol: string;
+  index: string;
+  score: number;
+  typeDisp: string;
+  longname?: string;
+  isYahooFinance: boolean;
+  name?: string;
+  permalink?: string;
+  industry?: string;
+  sector?: string;
+  newListingDate?: Date;
+  nameChangeDate?: Date;
+  prevName?: string;
+  exchDisp?: string;
+}
+
+export interface YahooFinanceSearchResult {
+  quotes: YahooFinanceSearchQuote[];
+  news: any[];
+  nav: any[];
+  lists: any[];
+  researchReports: any[];
+  totalTime: number;
+  timeTakenForQuotes: number;
+  timeTakenForNews: number;
+  timeTakenForNav: number;
+  timeTakenForLists: number;
+  timeTakenForResearchReports: number;
 } 

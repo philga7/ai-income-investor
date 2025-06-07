@@ -1,5 +1,5 @@
 import { yahooFinanceClient } from '@/lib/financial/api/yahoo/client';
-import type { QuoteSummary, Price, FinancialData, SummaryDetail, CashflowStatementHistory, AssetProfile, Earnings, BalanceSheetHistory } from '@/lib/financial/api/yahoo/types';
+import type { QuoteSummary, Price, FinancialData, SummaryDetail, CashflowStatementHistory, AssetProfile, Earnings, BalanceSheetHistory, SearchResult } from '@/lib/financial/api/yahoo/types';
 import { 
   handleYahooFinanceError, 
   validateResponse, 
@@ -139,21 +139,18 @@ class FinancialService {
    */
   public async searchSecurities(query: string) {
     try {
-      const results = await yahooFinanceClient.search(query) as YahooSearchResult;
+      const results = await yahooFinanceClient.search(query);
       
-      if (!results.quotes || !Array.isArray(results.quotes)) {
-        throw new DataValidationError('Search results must contain a quotes array');
+      if (!results) {
+        return [];
       }
 
-      return results.quotes.map(quote => {
-        validateResponse(quote, ['symbol', 'exchange', 'quoteType']);
-        return {
-          symbol: quote.symbol,
-          name: quote.shortname || quote.longname,
-          exchange: quote.exchange,
-          type: quote.quoteType
-        };
-      });
+      return results.map(quote => ({
+        symbol: quote.symbol,
+        name: quote.shortname || quote.longname,
+        exchange: quote.exchange,
+        type: quote.quoteType
+      }));
     } catch (error) {
       if (error instanceof DataValidationError) {
         throw error;
