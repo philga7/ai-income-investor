@@ -12,6 +12,13 @@ export interface PortfolioValueMetrics {
       cost: number;
       gainLoss: number;
       gainLossPercentage: number;
+      dayChange: number;
+      dayChangePercentage: number;
+      marketCap: number;
+      peRatio: number;
+      forwardPE: number;
+      priceToSales: number;
+      beta: number;
     };
   };
 }
@@ -69,12 +76,24 @@ export const portfolioAnalyticsService = {
       const cost = security.shares * security.average_cost;
       const gainLoss = value - cost;
       const gainLossPercentage = cost > 0 ? (gainLoss / cost) * 100 : 0;
+      
+      // Calculate day change
+      const prevClose = security.security.prev_close || security.security.price;
+      const dayChange = security.security.price - prevClose;
+      const dayChangePercentage = prevClose > 0 ? (dayChange / prevClose) * 100 : 0;
 
       securityValues[security.security.id] = {
         value,
         cost,
         gainLoss,
         gainLossPercentage,
+        dayChange,
+        dayChangePercentage,
+        marketCap: security.security.market_cap || 0,
+        peRatio: security.security.pe || 0,
+        forwardPE: security.security.forward_pe || 0,
+        priceToSales: security.security.price_to_sales_trailing_12_months || 0,
+        beta: security.security.beta || 0
       };
 
       totalValue += value;
