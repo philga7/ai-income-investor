@@ -19,6 +19,7 @@ import {
 import { SecurityChart } from "@/components/securities/security-chart";
 import { TechnicalIndicators } from "@/components/securities/technical-indicators";
 import { DividendHistory } from "@/components/securities/dividend-history";
+import { AnalystRecommendations } from "@/components/securities/analyst-recommendations";
 import { useState, useEffect } from "react";
 import { dividendService } from "@/services/dividendService";
 import { supabase } from "@/lib/supabase";
@@ -568,6 +569,16 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
               </CardHeader>
               <CardContent>
                 <TechnicalIndicators ticker={ticker} />
+              </CardContent>
+            </Card>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="col-span-1">
+              <CardHeader>
+                <CardTitle>Analyst Recommendations</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AnalystRecommendations symbol={ticker} />
               </CardContent>
             </Card>
           </div>
