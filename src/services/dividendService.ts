@@ -17,6 +17,9 @@ export interface DividendMetrics {
       projectedYield?: number;
       nextExDate?: string;
       nextPaymentDate?: string;
+      growthRate?: number;
+      payoutRatio?: number;
+      fiveYearAvgYield?: number;
     };
   };
 }
@@ -177,6 +180,75 @@ export const dividendService = {
 
     if (error) {
       console.error('Error updating dividend dates:', error);
+      throw error;
+    }
+  },
+
+  async fetchDividendData(ticker: string) {
+    try {
+      // Get the current session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
+      }
+
+      const response = await fetch(`/api/dividends?ticker=${ticker}`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to fetch dividend data');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching dividend data:', error);
+      throw error;
+    }
+  },
+
+  async updateSecurityDividendData(securityId: string, ticker: string) {
+    try {
+      const dividendData = await this.fetchDividendData(ticker);
+      
+      // Update the security's dividend information in the database
+      const { error } = await supabase
+        .from('securities')
+        .update({
+          dividend: dividendData.currentDividend,
+          yield: dividendData.yield,
+          ex_dividend_date: dividendData.exDividendDate,
+          payout_ratio: dividendData.payoutRatio,
+          dividend_growth_5yr: dividendData.growthRate,
+          five_year_avg_yield: dividendData.fiveYearAvgYield,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', securityId);
+
+      if (error) {
+        throw error;
+      }
+
+      return dividendData;
+    } catch (error) {
+      console.error('Error updating security dividend data:', error);
+      throw error;
+    }
+  },
+
+  async updatePortfolioDividendData(portfolio: Portfolio) {
+    try {
+      const updates = portfolio.securities.map(async (security) => {
+        return this.updateSecurityDividendData(security.security.id, security.security.ticker);
+      });
+
+      await Promise.all(updates);
+      return this.calculateDividendMetrics(portfolio);
+    } catch (error) {
+      console.error('Error updating portfolio dividend data:', error);
       throw error;
     }
   }
