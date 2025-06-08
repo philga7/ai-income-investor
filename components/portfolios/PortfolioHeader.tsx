@@ -55,39 +55,52 @@ export function PortfolioHeader({ portfolio, onPortfolioUpdated }: PortfolioHead
           <div>
             <p className="text-sm font-medium text-muted-foreground">Avg. P/E Ratio</p>
             <p className="text-2xl font-bold">
-              {metrics.securityValues && Object.keys(metrics.securityValues).length > 0
-                ? (Object.values(metrics.securityValues).reduce((sum, sv) => sum + (sv.peRatio || 0), 0) / 
-                   Object.keys(metrics.securityValues).length).toFixed(2)
-                : '0.00'}
+              {metrics.portfolioMetrics.weightedAveragePE.toFixed(2)}
             </p>
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground">Avg. Beta</p>
             <p className="text-2xl font-bold">
-              {metrics.securityValues && Object.keys(metrics.securityValues).length > 0
-                ? (Object.values(metrics.securityValues).reduce((sum, sv) => sum + (sv.beta || 0), 0) / 
-                   Object.keys(metrics.securityValues).length).toFixed(2)
-                : '0.00'}
+              {metrics.portfolioMetrics.weightedAverageBeta.toFixed(2)}
             </p>
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Avg. Market Cap</p>
+            <p className="text-sm font-medium text-muted-foreground">ROE</p>
             <p className="text-2xl font-bold">
-              {metrics.securityValues && Object.keys(metrics.securityValues).length > 0
-                ? portfolioAnalyticsService.formatCurrency(
-                    Object.values(metrics.securityValues).reduce((sum, sv) => sum + (sv.marketCap || 0), 0) / 
-                    Object.keys(metrics.securityValues).length
-                  )
-                : portfolioAnalyticsService.formatCurrency(0)}
+              {portfolioAnalyticsService.formatPercentage(metrics.portfolioMetrics.weightedAverageROE)}
             </p>
           </div>
           <div>
-            <p className="text-sm font-medium text-muted-foreground">Avg. Price/Sales</p>
+            <p className="text-sm font-medium text-muted-foreground">Profit Margin</p>
             <p className="text-2xl font-bold">
-              {metrics.securityValues && Object.keys(metrics.securityValues).length > 0
-                ? (Object.values(metrics.securityValues).reduce((sum, sv) => sum + (sv.priceToSales || 0), 0) / 
-                   Object.keys(metrics.securityValues).length).toFixed(2)
-                : '0.00'}
+              {portfolioAnalyticsService.formatPercentage(metrics.portfolioMetrics.weightedAverageProfitMargin)}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Debt/Equity</p>
+            <p className="text-2xl font-bold">
+              {metrics.portfolioMetrics.weightedAverageDebtToEquity.toFixed(2)}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Current Ratio</p>
+            <p className="text-2xl font-bold">
+              {metrics.portfolioMetrics.weightedAverageCurrentRatio.toFixed(2)}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Revenue Growth</p>
+            <p className="text-2xl font-bold">
+              {portfolioAnalyticsService.formatPercentage(metrics.portfolioMetrics.weightedAverageRevenueGrowth)}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">Earnings Growth</p>
+            <p className="text-2xl font-bold">
+              {portfolioAnalyticsService.formatPercentage(metrics.portfolioMetrics.weightedAverageEarningsGrowth)}
             </p>
           </div>
         </div>
