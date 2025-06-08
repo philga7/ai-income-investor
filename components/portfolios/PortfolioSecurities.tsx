@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { DeleteSecurityDialog } from './delete-security-dialog';
 import { AddSecurityDialog } from './add-security-dialog';
 import { portfolioAnalyticsService } from "@/src/services/portfolioAnalyticsService";
+import { PositionPerformance } from './PositionPerformance';
 
 interface PortfolioSecuritiesProps {
   securities: PortfolioSecurity[];
@@ -108,6 +109,12 @@ export function PortfolioSecurities({ securities, portfolioId, onSecurityDeleted
             })}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="space-y-4">
+        {securities.map((security) => (
+          <PositionPerformance key={security.id} security={security} />
+        ))}
       </div>
     </div>
   );

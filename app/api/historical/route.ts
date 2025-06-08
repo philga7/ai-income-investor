@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { financialService } from '@/services/financialService';
+import { financialService } from '@/src/services/financialService';
 import { handleYahooFinanceError } from '@/lib/financial/api/errors';
 
 // Mark this route as public
@@ -36,6 +36,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json(data);
   } catch (error) {
-    handleYahooFinanceError(error);
+    return handleYahooFinanceError(error);
   }
 } 
