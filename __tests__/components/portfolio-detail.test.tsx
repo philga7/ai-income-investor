@@ -33,11 +33,34 @@ jest.mock('@/services/portfolioService', () => ({
 jest.mock('@/src/services/portfolioAnalyticsService', () => ({
   portfolioAnalyticsService: {
     calculatePortfolioAnalytics: jest.fn(() => ({
-      totalValue: 0,
-      totalCost: 0,
-      totalGainLoss: 0,
-      totalGainLossPercentage: 0,
+      valueMetrics: {
+        totalValue: 0,
+        totalCost: 0,
+        totalGainLoss: 0,
+        totalGainLossPercentage: 0,
+        securityValues: {},
+        portfolioMetrics: {
+          weightedAveragePE: 0,
+          weightedAverageForwardPE: 0,
+          weightedAverageBeta: 0,
+          weightedAverageROE: 0,
+          weightedAverageROA: 0,
+          weightedAverageProfitMargin: 0,
+          weightedAverageOperatingMargin: 0,
+          weightedAverageDebtToEquity: 0,
+          weightedAverageCurrentRatio: 0,
+          weightedAverageQuickRatio: 0,
+          totalFreeCashFlow: 0,
+          totalOperatingCashFlow: 0,
+          weightedAverageRevenueGrowth: 0,
+          weightedAverageEarningsGrowth: 0
+        }
+      },
       dividendMetrics: {
+        totalAnnualDividend: 0,
+        totalMonthlyDividend: 0,
+        portfolioYield: 0,
+        weightedAverageYield: 0,
         securityDividends: {}
       }
     })),
@@ -45,7 +68,24 @@ jest.mock('@/src/services/portfolioAnalyticsService', () => ({
       totalValue: 0,
       totalCost: 0,
       totalGainLoss: 0,
-      totalGainLossPercentage: 0
+      totalGainLossPercentage: 0,
+      securityValues: {},
+      portfolioMetrics: {
+        weightedAveragePE: 0,
+        weightedAverageForwardPE: 0,
+        weightedAverageBeta: 0,
+        weightedAverageROE: 0,
+        weightedAverageROA: 0,
+        weightedAverageProfitMargin: 0,
+        weightedAverageOperatingMargin: 0,
+        weightedAverageDebtToEquity: 0,
+        weightedAverageCurrentRatio: 0,
+        weightedAverageQuickRatio: 0,
+        totalFreeCashFlow: 0,
+        totalOperatingCashFlow: 0,
+        weightedAverageRevenueGrowth: 0,
+        weightedAverageEarningsGrowth: 0
+      }
     })),
     formatCurrency: jest.fn((value) => `$${value}`),
     formatPercentage: jest.fn((value) => `${value}%`)
