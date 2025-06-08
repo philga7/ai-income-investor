@@ -4,128 +4,104 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { dividendService } from "@/services/dividendService";
 
 interface DividendHistoryProps {
   ticker: string;
 }
 
 interface Dividend {
-  date: string;
-  amount: number;
+  currentDividend: number;
   yield: number;
-  growth: number;
-  status: 'upcoming' | 'paid';
+  exDividendDate: string | null;
+  payoutRatio: number;
+  fiveYearAvgYield: number;
+  growthRate: number;
 }
 
 export function DividendHistory({ ticker }: DividendHistoryProps) {
-  const [dividends, setDividends] = useState<Dividend[]>([]);
+  const [dividend, setDividend] = useState<Dividend | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchDividends = async () => {
+    const fetchDividendData = async () => {
       try {
-        const response = await fetch(`/api/dividends?ticker=${ticker}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch dividend history');
-        }
-        const data = await response.json();
-        setDividends(data);
+        const data = await dividendService.fetchDividendData(ticker);
+        setDividend(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch dividend history');
+        setError(err instanceof Error ? err.message : 'Failed to fetch dividend data');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchDividends();
+    fetchDividendData();
   }, [ticker]);
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'upcoming':
-        return <Badge variant="default">Upcoming</Badge>;
-      case 'paid':
-        return <Badge variant="secondary">Paid</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
-    }
-  };
-
   if (loading) {
-    return <div>Loading dividend history...</div>;
+    return <div>Loading dividend data...</div>;
   }
 
   if (error) {
     return <div className="text-red-500">Error: {error}</div>;
   }
 
+  if (!dividend) {
+    return <div>No dividend data available</div>;
+  }
+
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Dividend History</CardTitle>
-          <CardDescription>Recent dividend payments and growth</CardDescription>
+          <CardTitle>Dividend Information</CardTitle>
+          <CardDescription>Current dividend metrics and growth</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="text-right">Yield</TableHead>
-                <TableHead className="text-right">Growth</TableHead>
-                <TableHead className="text-right">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {dividends.map((dividend, index) => (
-                <TableRow key={index}>
-                  <TableCell>{new Date(dividend.date).toLocaleDateString()}</TableCell>
-                  <TableCell className="text-right">${dividend.amount.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">{dividend.yield.toFixed(1)}%</TableCell>
-                  <TableCell className="text-right">
-                    <span className={dividend.growth > 0 ? 'text-green-600' : 'text-red-600'}>
-                      {dividend.growth > 0 ? '+' : ''}{dividend.growth.toFixed(1)}%
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {getStatusBadge(dividend.status)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="grid gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-sm font-medium">Current Dividend</h4>
+                <p className="text-2xl font-bold">${dividend.currentDividend.toFixed(2)}</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium">Dividend Yield</h4>
+                <p className="text-2xl font-bold">{dividend.yield.toFixed(2)}%</p>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-medium mb-2">Payout Ratio</h4>
+              <div className="flex items-center gap-2">
+                <Progress value={dividend.payoutRatio} className="w-full" />
+                <span className="text-sm">{dividend.payoutRatio.toFixed(1)}%</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-sm font-medium">5-Year Average Yield</h4>
+                <p className="text-lg">{dividend.fiveYearAvgYield.toFixed(2)}%</p>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium">Growth Rate</h4>
+                <p className={`text-lg ${dividend.growthRate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {dividend.growthRate >= 0 ? '+' : ''}{dividend.growthRate.toFixed(2)}%
+                </p>
+              </div>
+            </div>
+
+            {dividend.exDividendDate && (
+              <div>
+                <h4 className="text-sm font-medium">Next Ex-Dividend Date</h4>
+                <p className="text-lg">{new Date(dividend.exDividendDate).toLocaleDateString()}</p>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Dividend Growth</CardTitle>
-            <CardDescription>5-year compound annual growth rate</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">4.7%</div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Based on historical dividend payments
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Payout Ratio</CardTitle>
-            <CardDescription>Dividend sustainability metric</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">45%</div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Based on trailing twelve months earnings
-            </p>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

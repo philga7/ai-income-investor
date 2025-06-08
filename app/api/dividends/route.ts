@@ -1,41 +1,69 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import yahooFinance from 'yahoo-finance2';
+import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: Request) {
   try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    // Get the Authorization header
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Unauthorized - No token provided' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.split(' ')[1];
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Invalid token' },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
-    const securityId = searchParams.get('securityId');
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
+    const ticker = searchParams.get('ticker');
 
-    if (!securityId) {
-      return NextResponse.json({ error: 'Security ID is required' }, { status: 400 });
+    if (!ticker) {
+      return NextResponse.json({ error: 'Ticker is required' }, { status: 400 });
     }
 
-    let query = supabase
-      .from('dividends')
-      .select('*')
-      .eq('security_id', securityId)
-      .order('payment_date', { ascending: false });
+    // Fetch dividend history from Yahoo Finance
+    const quoteSummary = await yahooFinance.quoteSummary(ticker, {
+      modules: ['summaryDetail', 'defaultKeyStatistics']
+    });
 
-    if (startDate) {
-      query = query.gte('payment_date', startDate);
-    }
+    const dividendRate = quoteSummary.summaryDetail?.dividendRate || 0;
+    const dividendYield = quoteSummary.summaryDetail?.dividendYield || 0;
+    const exDividendDate = quoteSummary.summaryDetail?.exDividendDate;
+    const payoutRatio = quoteSummary.summaryDetail?.payoutRatio || 0;
+    const fiveYearAvgDividendYield = quoteSummary.summaryDetail?.fiveYearAvgDividendYield || 0;
 
-    if (endDate) {
-      query = query.lte('payment_date', endDate);
-    }
+    // Calculate dividend growth rate
+    const dividendGrowth = fiveYearAvgDividendYield > 0 
+      ? ((dividendYield - fiveYearAvgDividendYield) / fiveYearAvgDividendYield) * 100 
+      : 0;
 
-    const { data: dividends, error } = await query;
-
-    if (error) {
-      console.error('Error fetching dividends:', error);
-      return NextResponse.json({ error: 'Failed to fetch dividends' }, { status: 500 });
-    }
-
-    return NextResponse.json(dividends || []);
+    return NextResponse.json({
+      currentDividend: dividendRate,
+      yield: dividendYield * 100, // Convert to percentage
+      exDividendDate: exDividendDate ? new Date(Number(exDividendDate) * 1000).toISOString() : null,
+      payoutRatio: payoutRatio * 100, // Convert to percentage
+      fiveYearAvgYield: fiveYearAvgDividendYield * 100, // Convert to percentage
+      growthRate: dividendGrowth,
+    });
   } catch (error) {
-    console.error('Error in dividends API:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error fetching dividend data:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch dividend data' },
+      { status: 500 }
+    );
   }
 } 
