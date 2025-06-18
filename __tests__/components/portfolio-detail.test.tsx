@@ -141,7 +141,42 @@ jest.mock('@/components/ui/card', () => ({
   Card: ({ children }: { children: React.ReactNode }) => <div data-testid="card">{children}</div>,
   CardHeader: ({ children }: { children: React.ReactNode }) => <div data-testid="card-header">{children}</div>,
   CardTitle: ({ children }: { children: React.ReactNode }) => <div data-testid="card-title">{children}</div>,
+  CardDescription: ({ children }: { children: React.ReactNode }) => <div data-testid="card-description">{children}</div>,
   CardContent: ({ children }: { children: React.ReactNode }) => <div data-testid="card-content">{children}</div>,
+}));
+
+jest.mock('@/components/ui/button', () => ({
+  Button: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
+    <button data-testid="button" {...props}>{children}</button>
+  ),
+}));
+
+jest.mock('@/components/ui/badge', () => ({
+  Badge: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
+    <span data-testid="badge" {...props}>{children}</span>
+  ),
+}));
+
+jest.mock('@/components/ui/progress', () => ({
+  Progress: ({ ...props }: { [key: string]: any }) => (
+    <div data-testid="progress" {...props} />
+  ),
+}));
+
+jest.mock('@/components/ui/select', () => ({
+  Select: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
+    <div data-testid="select" {...props}>{children}</div>
+  ),
+  SelectContent: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="select-content">{children}</div>
+  ),
+  SelectItem: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
+    <div data-testid="select-item" {...props}>{children}</div>
+  ),
+  SelectTrigger: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="select-trigger">{children}</div>
+  ),
+  SelectValue: () => <div data-testid="select-value" />,
 }));
 
 jest.mock('@/components/ui/tabs', () => ({
@@ -170,6 +205,13 @@ jest.mock('@/components/portfolios/delete-security-dialog', () => ({
 
 jest.mock('@/components/portfolios/edit-portfolio-dialog', () => ({
   EditPortfolioDialog: () => <div data-testid="edit-portfolio-dialog" />,
+}));
+
+// Mock the PortfolioRebalancing component
+jest.mock('@/components/portfolios/PortfolioRebalancing', () => ({
+  PortfolioRebalancing: ({ portfolioId }: { portfolioId: string }) => (
+    <div data-testid="portfolio-rebalancing">Portfolio Rebalancing for {portfolioId}</div>
+  ),
 }));
 
 // Mock next/link
