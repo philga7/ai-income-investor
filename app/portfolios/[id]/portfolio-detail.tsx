@@ -8,6 +8,7 @@ import { portfolioDataService } from "@/src/services/portfolioDataService";
 import { PortfolioPerformance } from "@/components/portfolios/PortfolioPerformance";
 import { PortfolioSecurities } from "@/components/portfolios/PortfolioSecurities";
 import { PortfolioHeader } from "@/components/portfolios/PortfolioHeader";
+import { PortfolioRebalancing } from "@/components/portfolios/PortfolioRebalancing";
 import { BreadcrumbNav } from '@/components/ui/breadcrumb';
 import { Portfolio, PortfolioSecurity } from "@/services/portfolioService";
 
@@ -104,6 +105,7 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
       ]} />
       <PortfolioHeader portfolio={portfolio} onPortfolioUpdated={handlePortfolioUpdated} />
       <PortfolioPerformance portfolio={portfolio} />
+      <PortfolioRebalancing portfolioId={portfolio.id} />
       <PortfolioSecurities
         securities={portfolio.securities}
         portfolioId={portfolio.id}
