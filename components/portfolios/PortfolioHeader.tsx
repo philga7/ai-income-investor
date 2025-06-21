@@ -3,6 +3,7 @@ import { portfolioAnalyticsService } from '@/services/portfolioAnalyticsService'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EditPortfolioDialog } from '@/components/portfolios/edit-portfolio-dialog';
 import { DeletePortfolioDialog } from '@/components/portfolios/delete-portfolio-dialog';
+import { AITestAnalysis } from '@/components/portfolios/AITestAnalysis';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 
 interface PortfolioHeaderProps {
@@ -18,6 +19,7 @@ export function PortfolioHeader({ portfolio, onPortfolioUpdated }: PortfolioHead
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-2xl font-bold">{portfolio.name}</CardTitle>
         <div className="flex items-center space-x-2">
+          <AITestAnalysis portfolioId={portfolio.id} />
           <EditPortfolioDialog portfolio={portfolio} onPortfolioUpdated={onPortfolioUpdated} />
           <DeletePortfolioDialog portfolioId={portfolio.id} portfolioName={portfolio.name} />
         </div>
