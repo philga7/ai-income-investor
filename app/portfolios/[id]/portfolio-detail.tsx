@@ -9,6 +9,8 @@ import { PortfolioPerformance } from "@/components/portfolios/PortfolioPerforman
 import { PortfolioSecurities } from "@/components/portfolios/PortfolioSecurities";
 import { PortfolioHeader } from "@/components/portfolios/PortfolioHeader";
 import { PortfolioRebalancing } from "@/components/portfolios/PortfolioRebalancing";
+import { EnhancedAIAnalysis } from "@/components/portfolios/EnhancedAIAnalysis";
+import { DividendTimingDashboard } from "@/components/portfolios/DividendTimingDashboard";
 import { BreadcrumbNav } from '@/components/ui/breadcrumb';
 import { Portfolio, PortfolioSecurity } from "@/services/portfolioService";
 
@@ -104,6 +106,15 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
         { label: portfolio.name, href: `/portfolios/${portfolio.id}` }
       ]} />
       <PortfolioHeader portfolio={portfolio} onPortfolioUpdated={handlePortfolioUpdated} />
+      
+      {/* Enhanced AI Analysis Button */}
+      <div className="flex justify-end">
+        <EnhancedAIAnalysis portfolioId={portfolio.id} />
+      </div>
+      
+      {/* Dividend Timing Dashboard */}
+      <DividendTimingDashboard portfolio={portfolio} />
+      
       <PortfolioPerformance portfolio={portfolio} />
       <PortfolioRebalancing portfolioId={portfolio.id} />
       <PortfolioSecurities
