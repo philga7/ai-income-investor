@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getAnthropicClient } from '@/lib/ai/anthropic-client';
 import { aiAnalysisCacheService } from '@/src/services/aiAnalysisCacheService';
+import { enhancedPortfolioAnalysisService, AIAnalysisRequest } from '@/src/services/enhancedPortfolioAnalysisService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,13 +41,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { portfolioId, forceRefresh = false } = await request.json();
+    const { portfolioId, forceRefresh = false, analysisType = 'comprehensive' } = await request.json();
     
     if (!portfolioId) {
       return NextResponse.json({ error: 'Portfolio ID is required' }, { status: 400 });
     }
 
-    console.log(`AI Analysis requested for portfolio ${portfolioId} by user ${user.id}`);
+    console.log(`Enhanced AI Analysis requested for portfolio ${portfolioId} by user ${user.id}, type: ${analysisType}`);
 
     // Debug: Check if portfolio exists first
     const { data: portfolioExists, error: existsError } = await supabase
@@ -95,22 +96,44 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Transform portfolio data for AI analysis
+    // Transform portfolio data for enhanced analysis
     const portfolioData = {
       id: portfolio.id,
       name: portfolio.name,
       description: portfolio.description,
+      created_at: portfolio.created_at,
+      updated_at: portfolio.updated_at,
       securities: portfolio.portfolio_securities?.map((ps: any) => ({
-        id: ps.securities.id,
-        ticker: ps.securities.ticker,
-        name: ps.securities.name,
         shares: ps.shares,
         average_cost: ps.average_cost,
-        price: ps.securities.price,
-        market_value: ps.shares * ps.securities.price,
-        dividend: ps.securities.dividend,
-        yield: ps.securities.yield,
-        sector: ps.securities.sector
+        security: {
+          id: ps.securities.id,
+          ticker: ps.securities.ticker,
+          name: ps.securities.name,
+          price: ps.securities.price,
+          prev_close: ps.securities.prev_close,
+          dividend: ps.securities.dividend,
+          yield: ps.securities.yield,
+          sector: ps.securities.sector,
+          payout_ratio: ps.securities.payout_ratio,
+          dividend_growth_5yr: ps.securities.dividend_growth_5yr,
+          market_cap: ps.securities.market_cap,
+          pe: ps.securities.pe,
+          forward_pe: ps.securities.forward_pe,
+          price_to_sales_trailing_12_months: ps.securities.price_to_sales_trailing_12_months,
+          beta: ps.securities.beta,
+          return_on_equity: ps.securities.return_on_equity,
+          return_on_assets: ps.securities.return_on_assets,
+          profit_margins: ps.securities.profit_margins,
+          operating_margins: ps.securities.operating_margins,
+          debt_to_equity: ps.securities.debt_to_equity,
+          current_ratio: ps.securities.current_ratio,
+          quick_ratio: ps.securities.quick_ratio,
+          free_cash_flow: ps.securities.free_cash_flow,
+          operating_cash_flow: ps.securities.operating_cash_flow,
+          revenue_growth: ps.securities.revenue_growth,
+          earnings_growth: ps.securities.earnings_growth
+        }
       })) || []
     };
 
@@ -157,64 +180,71 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Generate enhanced portfolio analysis
+    console.log('Generating enhanced portfolio analysis...');
+    const enhancedAnalysis = await enhancedPortfolioAnalysisService.generateEnhancedAnalysis(
+      portfolioData,
+      analysisType as AIAnalysisRequest['analysisType']
+    );
+
     // Get AI client
     const anthropicClient = getAnthropicClient();
     
-    // Prepare portfolio data for AI analysis
-    const totalValue = portfolioData.securities.reduce((sum: number, sec: any) => sum + sec.market_value, 0);
-    const totalDividend = portfolioData.securities.reduce((sum: number, sec: any) => sum + (sec.dividend * sec.shares), 0);
-    const averageYield = totalValue > 0 ? (totalDividend / totalValue) * 100 : 0;
+    // Format analysis data for AI consumption with dividend timing focus
+    const formattedAnalysis = enhancedPortfolioAnalysisService.formatForAIAnalysis(enhancedAnalysis);
 
-    const portfolioSummary = {
-      name: portfolioData.name,
-      totalValue: totalValue.toFixed(2),
-      totalDividend: totalDividend.toFixed(2),
-      averageYield: averageYield.toFixed(2),
-      securities: portfolioData.securities.map((sec: any) => ({
-        ticker: sec.ticker,
-        name: sec.name,
-        shares: sec.shares,
-        price: sec.price,
-        marketValue: sec.market_value.toFixed(2),
-        dividend: sec.dividend,
-        yield: sec.yield,
-        sector: sec.sector
-      }))
-    };
+    // Create AI prompt with dividend timing focus
+    const prompt = `Analyze this income-focused investment portfolio with special attention to dividend timing and reliability:
 
-    console.log('Portfolio summary for AI:', portfolioSummary);
+${formattedAnalysis}
 
-    // Create AI prompt
-    const prompt = `Analyze this income-focused investment portfolio and provide insights on:
+Please provide a comprehensive analysis focusing on:
 
-Portfolio Summary:
-- Name: ${portfolioSummary.name}
-- Total Value: $${portfolioSummary.totalValue}
-- Total Annual Dividend: $${portfolioSummary.totalDividend}
-- Average Yield: ${portfolioSummary.averageYield}%
+1. **Dividend Timing Analysis:**
+   - When are the next dividend payments expected?
+   - Which securities have upcoming ex-dividend dates?
+   - How does the dividend calendar look for the next 30-90 days?
 
-Securities:
-${portfolioSummary.securities.length > 0 ? 
-  portfolioSummary.securities.map((sec: any) => 
-    `- ${sec.ticker} (${sec.name}): ${sec.shares} shares @ $${sec.price}, Market Value: $${sec.marketValue}, Dividend: $${sec.dividend} (${sec.yield}% yield), Sector: ${sec.sector}`
-  ).join('\n') :
-  'No securities currently in this portfolio.'
-}
+2. **Dividend Reliability Assessment:**
+   - Which securities have the most reliable dividend payments?
+   - Are there any concerns about dividend sustainability?
+   - How does the payout ratio health look across the portfolio?
 
-Please provide:
-1. Overall portfolio assessment and income potential
-2. Diversification analysis across sectors
-3. Risk assessment and potential concerns
-4. Suggestions for improvement or optimization
-5. Key strengths and areas for attention
+3. **Portfolio Optimization:**
+   - Suggestions for improving dividend income
+   - Recommendations for timing new purchases around ex-dividend dates
+   - Opportunities to increase yield while maintaining quality
 
-Focus on income generation, dividend sustainability, and long-term stability.`;
+4. **Risk Assessment:**
+   - Dividend cut risk analysis
+   - Sector concentration concerns
+   - Overall portfolio stability
 
-    console.log('Sending request to Anthropic API...');
+5. **Actionable Recommendations:**
+   - Specific buy/sell/hold recommendations with reasoning
+   - Timing suggestions for dividend capture strategies
+   - Portfolio rebalancing opportunities
+
+Focus on providing actionable insights for dividend investors who want to maximize income while maintaining portfolio stability.`;
+
+    console.log('Sending enhanced request to Anthropic API...');
     
     try {
       // Make AI request
-      const response = await anthropicClient.analyzePortfolio(portfolioData);
+      const response = await anthropicClient.generateResponse({
+        prompt,
+        systemPrompt: `You are an expert dividend portfolio analyst specializing in income-focused investing. 
+        
+Your analysis should be:
+- Dividend-focused and timing-aware
+- Actionable with specific recommendations
+- Risk-aware and conservative
+- Based on fundamental analysis
+- Clear and concise
+
+Structure your response with clear sections for timing analysis, reliability assessment, recommendations, and risk factors.`,
+        context: { enhancedAnalysis }
+      });
       
       console.log('AI response received:', {
         hasContent: !!response.content,
@@ -222,6 +252,13 @@ Focus on income generation, dividend sustainability, and long-term stability.`;
         usage: response.usage,
         model: response.model
       });
+      
+      // Parse AI response into structured format
+      const parsedResponse = enhancedPortfolioAnalysisService.parseAIResponse(
+        response.content!,
+        response.usage!,
+        response.model
+      );
       
       // Store analysis in cache
       let cacheId = null;
@@ -246,12 +283,9 @@ Focus on income generation, dividend sustainability, and long-term stability.`;
       }
 
       return NextResponse.json({
-        analysis: response.content,
-        usage: response.usage,
-        model: response.model,
-        timestamp: response.timestamp.toISOString(),
+        ...parsedResponse,
         cache_id: cacheId,
-        message: 'Fresh analysis generated'
+        message: 'Enhanced analysis generated with dividend timing focus'
       });
     } catch (aiError) {
       console.error('AI analysis error:', aiError);
@@ -262,7 +296,7 @@ Focus on income generation, dividend sustainability, and long-term stability.`;
     }
 
   } catch (error) {
-    console.error('Error in AI analysis:', error);
+    console.error('Error in enhanced AI analysis:', error);
     return NextResponse.json({ 
       error: 'Internal server error',
       details: error instanceof Error ? error.message : 'Unknown error'
