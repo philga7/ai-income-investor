@@ -49,18 +49,16 @@ export default function Home() {
               Your dividend investment overview and recommendations.
             </p>
           </div>
-          <Link href="/portfolios/create">
-            <Button className="w-full md:w-auto">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              New Portfolio
-            </Button>
-          </Link>
         </div>
         
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <PortfolioSummary />
-          {portfolio && <DividendTimeline portfolio={portfolio} />}
-          <MarketOverview />
+          <Link href="/portfolios" className="block">
+            <DividendTimeline />
+          </Link>
+          <Link href="/securities" className="block">
+            <MarketOverview />
+          </Link>
         </div>
         
         <div className="grid gap-6 md:grid-cols-2">
