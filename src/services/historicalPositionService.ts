@@ -9,6 +9,12 @@ export interface HistoricalPositionData {
   gainLossPercentage: number;
 }
 
+export interface HistoricalPositionDataWithSMA extends HistoricalPositionData {
+  price: number;
+  sma50?: number;
+  sma200?: number;
+}
+
 export interface PositionPerformanceMetrics {
   totalGainLoss: number;
   averageGainLossPercentage: number;
@@ -16,6 +22,22 @@ export interface PositionPerformanceMetrics {
   maxGainLossPercentage: number;
   minGainLoss: number;
   minGainLossPercentage: number;
+}
+
+// Helper function to calculate Simple Moving Average
+function calculateSMA(prices: number[], period: number): number[] {
+  const sma: number[] = [];
+  
+  for (let i = 0; i < prices.length; i++) {
+    if (i < period - 1) {
+      sma.push(NaN); // Not enough data for SMA
+    } else {
+      const sum = prices.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
+      sma.push(sum / period);
+    }
+  }
+  
+  return sma;
 }
 
 export const historicalPositionService = {
@@ -42,6 +64,45 @@ export const historicalPositionService = {
       }));
     } catch (error) {
       console.error('Error fetching historical position data:', error);
+      throw error;
+    }
+  },
+
+  async getHistoricalPositionDataWithSMA(
+    security: PortfolioSecurity,
+    months: number = 6
+  ): Promise<HistoricalPositionDataWithSMA[]> {
+    try {
+      // Calculate start date (6 months ago)
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - months);
+
+      // Fetch historical data from Yahoo Finance
+      const historicalData = await yahooFinanceApi.historical(security.security.ticker, {
+        period1: startDate,
+        period2: endDate,
+        interval: '1d'
+      });
+
+      // Extract prices for SMA calculation
+      const prices = historicalData.map((quote: HistoricalQuote) => quote.close);
+      const sma50 = calculateSMA(prices, 50);
+      const sma200 = calculateSMA(prices, 200);
+
+      // Transform the data into our format with SMA values
+      return historicalData.map((quote: HistoricalQuote, index: number) => ({
+        date: quote.date.toISOString(),
+        value: security.shares * quote.close,
+        cost: security.shares * security.average_cost,
+        gainLoss: (security.shares * quote.close) - (security.shares * security.average_cost),
+        gainLossPercentage: ((quote.close - security.average_cost) / security.average_cost) * 100,
+        price: quote.close,
+        sma50: sma50[index] || undefined,
+        sma200: sma200[index] || undefined
+      }));
+    } catch (error) {
+      console.error('Error fetching historical position data with SMA:', error);
       throw error;
     }
   },

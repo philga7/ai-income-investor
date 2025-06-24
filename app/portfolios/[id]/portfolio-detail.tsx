@@ -107,6 +107,16 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
       ]} />
       <PortfolioHeader portfolio={portfolio} onPortfolioUpdated={handlePortfolioUpdated} />
       
+      {/* Ticker Listing and Add Security - moved to top */}
+      <PortfolioSecurities
+        securities={portfolio.securities}
+        portfolioId={portfolio.id}
+        onSecurityDeleted={handleSecurityDeleted}
+      />
+      
+      {/* Portfolio Performance - moved up */}
+      <PortfolioPerformance portfolio={portfolio} />
+      
       {/* Enhanced AI Analysis Button */}
       <div className="flex justify-end">
         <EnhancedAIAnalysis portfolioId={portfolio.id} />
@@ -115,13 +125,7 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
       {/* Dividend Timing Dashboard */}
       <DividendTimingDashboard portfolio={portfolio} />
       
-      <PortfolioPerformance portfolio={portfolio} />
       <PortfolioRebalancing portfolioId={portfolio.id} />
-      <PortfolioSecurities
-        securities={portfolio.securities}
-        portfolioId={portfolio.id}
-        onSecurityDeleted={handleSecurityDeleted}
-      />
     </div>
   );
 } 
