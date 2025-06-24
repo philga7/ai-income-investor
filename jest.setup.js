@@ -34,6 +34,13 @@ class BroadcastChannel {
 }
 global.BroadcastChannel = BroadcastChannel;
 
+// Mock ResizeObserver for Recharts components
+global.ResizeObserver = jest.fn().mockImplementation(() => ({
+  observe: jest.fn(),
+  unobserve: jest.fn(),
+  disconnect: jest.fn(),
+}));
+
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,

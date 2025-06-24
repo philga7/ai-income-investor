@@ -17,6 +17,13 @@ export const YAHOO_FINANCE_CONFIG = {
     maxSize: 1000, // Maximum number of cached items
   },
 
+  // Retry settings for specific errors
+  retry: {
+    invalidCrumbRetries: 3,
+    invalidCrumbDelay: 2000, // 2 seconds
+    exponentialBackoff: true,
+  },
+
   // Default modules to fetch in quote summary
   defaultModules: [
     'assetProfile',
@@ -26,6 +33,7 @@ export const YAHOO_FINANCE_CONFIG = {
     'financialData',
     'price',
     'summaryDetail',
+    'defaultKeyStatistics',
   ] as const,
 
   // Error handling
@@ -35,6 +43,7 @@ export const YAHOO_FINANCE_CONFIG = {
     networkError: 'Network error occurred. Please check your connection.',
     timeout: 'Request timed out. Please try again.',
     serverError: 'Server error occurred. Please try again later.',
+    invalidCrumb: 'Yahoo Finance API authentication error. Please try again in a moment.',
   },
 } as const;
 
