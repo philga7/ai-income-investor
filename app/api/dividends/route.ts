@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
-import yahooFinance from 'yahoo-finance2';
+import { yahooFinanceClient } from '@/lib/financial/api/yahoo/client';
 import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: Request) {
+  let ticker: string | null = null;
+  
   try {
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,16 +31,17 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const ticker = searchParams.get('ticker');
+    ticker = searchParams.get('ticker');
 
     if (!ticker) {
       return NextResponse.json({ error: 'Ticker is required' }, { status: 400 });
     }
 
-    // Fetch dividend history from Yahoo Finance
-    const quoteSummary = await yahooFinance.quoteSummary(ticker, {
-      modules: ['summaryDetail', 'defaultKeyStatistics']
-    });
+    // Fetch dividend history from Yahoo Finance using the client
+    const quoteSummary = await yahooFinanceClient.getQuoteSummary(ticker, [
+      'summaryDetail',
+      'defaultKeyStatistics'
+    ]);
 
     const dividendRate = quoteSummary.summaryDetail?.dividendRate || 0;
     const dividendYield = quoteSummary.summaryDetail?.dividendYield || 0;
@@ -60,7 +63,25 @@ export async function GET(request: Request) {
       growthRate: dividendGrowth,
     });
   } catch (error) {
-    console.error('Error fetching dividend data:', error);
+    console.error('Error fetching dividend data for ticker:', ticker, error);
+    
+    // Provide more specific error messages based on the error type
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    if (errorMessage.includes('Invalid Crumb') || errorMessage.includes('invalid crumb')) {
+      return NextResponse.json(
+        { error: 'Yahoo Finance API authentication error. Please try again in a moment.' },
+        { status: 503 }
+      );
+    }
+    
+    if (errorMessage.includes('Invalid symbol') || errorMessage.includes('invalid symbol')) {
+      return NextResponse.json(
+        { error: `Invalid ticker: ${ticker}` },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
       { error: 'Failed to fetch dividend data' },
       { status: 500 }

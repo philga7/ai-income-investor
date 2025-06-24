@@ -77,7 +77,32 @@ export async function GET(request: Request) {
 
       return NextResponse.json(quoteSummary);
     } catch (error) {
-      console.error('Error fetching quote data:', error);
+      console.error('Error fetching quote data for symbol:', symbol, error);
+      
+      // Provide more specific error messages based on the error type
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      if (errorMessage.includes('Invalid Crumb') || errorMessage.includes('invalid crumb')) {
+        return NextResponse.json(
+          { error: 'Yahoo Finance API authentication error. Please try again in a moment.' },
+          { status: 503 }
+        );
+      }
+      
+      if (errorMessage.includes('Invalid symbol') || errorMessage.includes('invalid symbol')) {
+        return NextResponse.json(
+          { error: `Invalid symbol: ${symbol}` },
+          { status: 400 }
+        );
+      }
+      
+      if (errorMessage.includes('Rate limit') || errorMessage.includes('rate limit')) {
+        return NextResponse.json(
+          { error: 'Rate limit exceeded. Please try again later.' },
+          { status: 429 }
+        );
+      }
+      
       return NextResponse.json(
         { error: 'Failed to fetch quote data from Yahoo Finance' },
         { status: 500 }

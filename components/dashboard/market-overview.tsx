@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BadgeDelta, AreaChart } from "@tremor/react";
+import { AreaChart } from "@tremor/react";
 import { ArrowUpDown } from "lucide-react";
 import { SecurityQuote } from '@/services/financialService';
 import { useAuth } from '@/lib/auth';
+import { fetchJson } from '@/lib/api-utils';
 
 interface MarketIndexData {
   name: string;
@@ -25,22 +26,6 @@ const indices = [
   { name: 'Dow Jones', symbol: '^DJI', displayName: 'DJIA' },
   { name: 'Nasdaq', symbol: '^IXIC', displayName: 'NASDAQ' },
 ];
-
-async function fetchJson(url: string, token: string | null) {
-  if (!token) {
-    throw new Error('Authentication token is not available.');
-  }
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  });
-  if (!response.ok) {
-    const errorBody = await response.text();
-    throw new Error(`Failed to fetch ${url}: ${response.statusText} - ${errorBody}`);
-  }
-  return response.json();
-}
 
 export function MarketOverview() {
   const { session } = useAuth();
@@ -172,12 +157,20 @@ export function MarketOverview() {
             <div key={index.name} className="space-y-1">
               <p className="text-xs text-muted-foreground">{index.name}</p>
               <p className="text-lg font-semibold">{index.value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-              <BadgeDelta
-                deltaType={index.change >= 0 ? "increase" : "decrease"}
-                size="xs"
-              >
-                {index.change > 0 ? "+" : ""}{index.changePercent.toFixed(2)}%
-              </BadgeDelta>
+              <div className="space-y-0.5">
+                {/* Points change */}
+                <p className={`text-xs font-medium ${
+                  index.change >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {index.change >= 0 ? '+' : ''}{index.change.toFixed(2)}
+                </p>
+                {/* Percentage change */}
+                <p className={`text-xs font-medium ${
+                  index.changePercent >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  ({index.changePercent >= 0 ? '+' : ''}{index.changePercent.toFixed(2)}%)
+                </p>
+              </div>
             </div>
           ))}
         </div>

@@ -43,6 +43,54 @@ class YahooFinanceClient {
     this.cache.set(key, { data, timestamp: Date.now() });
   }
 
+  public clearCache(): void {
+    this.cache.clear();
+    console.log('YahooFinanceClient: Cache manually cleared');
+  }
+
+  private clearCacheInternal(): void {
+    this.cache.clear();
+    console.log('YahooFinanceClient: Cache cleared due to invalid crumb error');
+  }
+
+  private async retryWithCacheClear<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = YAHOO_FINANCE_CONFIG.maxRetries
+  ): Promise<T> {
+    let lastError: Error;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error as Error;
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        // Check if it's an "Invalid Crumb" error
+        if (errorMessage.includes('Invalid Crumb') || errorMessage.includes('invalid crumb')) {
+          console.log(`YahooFinanceClient: Invalid crumb error on attempt ${attempt}, clearing cache and retrying...`);
+          this.clearCacheInternal();
+          
+          // Add a delay before retrying with exponential backoff
+          if (attempt < maxRetries) {
+            const delay = YAHOO_FINANCE_CONFIG.retry.exponentialBackoff 
+              ? YAHOO_FINANCE_CONFIG.retry.invalidCrumbDelay * Math.pow(2, attempt - 1)
+              : YAHOO_FINANCE_CONFIG.retry.invalidCrumbDelay;
+            
+            console.log(`YahooFinanceClient: Waiting ${delay}ms before retry ${attempt + 1}...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+          continue;
+        }
+        
+        // For other errors, don't retry
+        throw error;
+      }
+    }
+    
+    throw lastError!;
+  }
+
   private transformBalanceSheetStatement(stmt: any): BalanceSheetStatement {
     return {
       endDate: stmt.endDate.getTime(),
@@ -289,7 +337,7 @@ class YahooFinanceClient {
       return cachedData;
     }
 
-    try {
+    return this.retryWithCacheClear(async () => {
       console.log('YahooFinanceClient: Making API call for', symbol);
       const result = await yahooFinance.quoteSummary(symbol, {
         modules: [...modules],
@@ -323,11 +371,7 @@ class YahooFinanceClient {
 
       this.setCachedData(cacheKey, transformedResult);
       return transformedResult;
-    } catch (error) {
-      console.error('YahooFinanceClient: Error getting quote summary for', symbol, error);
-      const yahooError = error as YahooFinanceError;
-      throw new Error(yahooError.message || YAHOO_FINANCE_CONFIG.errorMessages.serverError);
-    }
+    });
   }
 
   public async getHistoricalData(
@@ -340,7 +384,7 @@ class YahooFinanceClient {
     const cachedData = this.getCachedData(cacheKey);
     if (cachedData) return cachedData;
 
-    try {
+    return this.retryWithCacheClear(async () => {
       const result = await yahooFinance.historical(symbol, {
         period1,
         period2,
@@ -349,18 +393,15 @@ class YahooFinanceClient {
 
       this.setCachedData(cacheKey, result);
       return result;
-    } catch (error) {
-      const yahooError = error as YahooFinanceError;
-      throw new Error(yahooError.message || YAHOO_FINANCE_CONFIG.errorMessages.serverError);
-    }
+    });
   }
 
   public async search(query: string): Promise<SearchResult[] | null> {
-    try {
-      const cacheKey = `search:${query}`;
-      const cached = this.getCachedData<SearchResult[]>(cacheKey);
-      if (cached) return cached;
+    const cacheKey = `search:${query}`;
+    const cached = this.getCachedData<SearchResult[]>(cacheKey);
+    if (cached) return cached;
 
+    return this.retryWithCacheClear(async () => {
       const results = await yahooFinance.search(query, {
         quotesCount: 10,
         newsCount: 0,
@@ -391,10 +432,7 @@ class YahooFinanceClient {
 
       this.setCachedData(cacheKey, transformedResults);
       return transformedResults;
-    } catch (error) {
-      console.error('Error searching securities:', error);
-      return null;
-    }
+    });
   }
 }
 
