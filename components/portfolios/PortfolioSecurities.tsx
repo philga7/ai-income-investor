@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { PortfolioSecurity } from '@/services/portfolioService';
 import {
   Table,
@@ -13,8 +14,8 @@ import { Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { DeleteSecurityDialog } from './delete-security-dialog';
 import { AddSecurityDialog } from './add-security-dialog';
+import { PositionPerformanceModal } from './PositionPerformanceModal';
 import { portfolioAnalyticsService } from "@/src/services/portfolioAnalyticsService";
-import { PositionPerformance } from './PositionPerformance';
 
 interface PortfolioSecuritiesProps {
   securities: PortfolioSecurity[];
@@ -24,6 +25,9 @@ interface PortfolioSecuritiesProps {
 }
 
 export function PortfolioSecurities({ securities, portfolioId, onSecurityDeleted, onSecurityAdded }: PortfolioSecuritiesProps) {
+  const [selectedSecurity, setSelectedSecurity] = useState<PortfolioSecurity | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const analytics = portfolioAnalyticsService.calculatePortfolioAnalytics({
     id: portfolioId,
     name: '',
@@ -32,6 +36,16 @@ export function PortfolioSecurities({ securities, portfolioId, onSecurityDeleted
     updated_at: new Date().toISOString(),
     securities
   });
+
+  const handleRowClick = (security: PortfolioSecurity) => {
+    setSelectedSecurity(security);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedSecurity(null);
+  };
 
   return (
     <div className="space-y-4">
@@ -68,7 +82,11 @@ export function PortfolioSecurities({ securities, portfolioId, onSecurityDeleted
               const securityValue = analytics.valueMetrics.securityValues[ps.security.id];
 
               return (
-                <TableRow key={ps.id}>
+                <TableRow 
+                  key={ps.id} 
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleRowClick(ps)}
+                >
                   <TableCell className="font-medium">{ps.security.ticker}</TableCell>
                   <TableCell>{ps.security.name}</TableCell>
                   <TableCell>
@@ -90,7 +108,7 @@ export function PortfolioSecurities({ securities, portfolioId, onSecurityDeleted
                     {portfolioAnalyticsService.formatCurrency(securityDividend.annualDividend)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                       <Link href={`/portfolios/${portfolioId}/securities/${ps.id}/edit`}>
                         <Button variant="ghost" size="icon">
                           <Pencil className="h-4 w-4" />
@@ -111,11 +129,12 @@ export function PortfolioSecurities({ securities, portfolioId, onSecurityDeleted
         </Table>
       </div>
 
-      <div className="space-y-4">
-        {securities.map((security) => (
-          <PositionPerformance key={security.id} security={security} />
-        ))}
-      </div>
+      {/* Position Performance Modal */}
+      <PositionPerformanceModal
+        security={selectedSecurity}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </div>
   );
 } 
