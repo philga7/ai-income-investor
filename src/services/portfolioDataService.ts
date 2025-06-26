@@ -452,6 +452,10 @@ export const portfolioDataService = {
         console.warn('No portfolio securities found for portfolio:', portfolioId);
         return [];
       }
+      if (Array.isArray(portfolioSecurities) && portfolioSecurities.length === 0) {
+        console.warn('No tickers found in portfolio securities');
+        return [];
+      }
 
       // Check if any securities need updating based on last_fetched timestamp
       const cacheTtl = 5 * 60 * 1000; // 5 minutes in milliseconds

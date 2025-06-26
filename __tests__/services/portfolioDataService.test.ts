@@ -17,6 +17,17 @@ jest.mock('@/lib/supabase', () => ({
   }
 }));
 
+// Mock console.warn
+let originalConsoleWarn: typeof console.warn;
+beforeAll(() => {
+  originalConsoleWarn = console.warn;
+  jest.spyOn(console, 'warn').mockImplementation(() => {});
+});
+
+afterAll(() => {
+  console.warn = originalConsoleWarn;
+});
+
 describe('portfolioDataService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
