@@ -162,6 +162,27 @@ interface SupabasePortfolioSecurity {
     name: string;
     sector: string;
     industry: string;
+    address1?: string;
+    city?: string;
+    state?: string;
+    zip?: string;
+    country?: string;
+    phone?: string;
+    website?: string;
+    industry_key?: string;
+    industry_disp?: string;
+    sector_key?: string;
+    sector_disp?: string;
+    long_business_summary?: string;
+    full_time_employees?: number;
+    audit_risk?: number;
+    board_risk?: number;
+    compensation_risk?: number;
+    shareholder_rights_risk?: number;
+    overall_risk?: number;
+    governance_epoch_date?: string;
+    compensation_as_of_epoch_date?: string;
+    ir_website?: string;
     price: number;
     prev_close: number;
     open: number;
@@ -186,7 +207,55 @@ interface SupabasePortfolioSecurity {
     fifty_day_average: number;
     two_hundred_day_average: number;
     ex_dividend_date: string;
+    operating_cash_flow?: number;
+    free_cash_flow?: number;
+    cash_flow_growth?: number;
+    target_low_price?: number;
+    target_high_price?: number;
+    recommendation_key?: string;
+    number_of_analyst_opinions?: number;
+    total_cash?: number;
+    total_debt?: number;
+    current_ratio?: number;
+    quick_ratio?: number;
+    debt_to_equity?: number;
+    revenue_per_share?: number;
+    return_on_assets?: number;
+    return_on_equity?: number;
+    gross_profits?: number;
+    earnings_growth?: number;
+    revenue_growth?: number;
+    gross_margins?: number;
+    ebitda_margins?: number;
+    operating_margins?: number;
+    profit_margins?: number;
+    total_assets?: number;
+    total_current_assets?: number;
+    total_liabilities?: number;
+    total_current_liabilities?: number;
+    total_stockholder_equity?: number;
+    cash?: number;
+    short_term_investments?: number;
+    net_receivables?: number;
+    inventory?: number;
+    other_current_assets?: number;
+    long_term_investments?: number;
+    property_plant_equipment?: number;
+    other_assets?: number;
+    intangible_assets?: number;
+    goodwill?: number;
+    accounts_payable?: number;
+    short_long_term_debt?: number;
+    other_current_liabilities?: number;
+    long_term_debt?: number;
+    other_liabilities?: number;
+    minority_interest?: number;
+    treasury_stock?: number;
+    retained_earnings?: number;
+    common_stock?: number;
+    capital_surplus?: number;
     last_fetched: string;
+    earnings?: any;
   };
 }
 
@@ -234,7 +303,7 @@ export const portfolioDataService = {
             if (!isNaN(epochDate.getTime())) {
               const year = epochDate.getFullYear();
               if (year >= 1900 && year <= 2100) {
-                return epochDate.toISOString();
+                return date.toISOString();
               }
             }
             console.warn(`Invalid ex-dividend date format:`, timestamp);
@@ -277,6 +346,27 @@ export const portfolioDataService = {
             name,
             sector,
             industry,
+            address1,
+            city,
+            state,
+            zip,
+            country,
+            phone,
+            website,
+            industry_key,
+            industry_disp,
+            sector_key,
+            sector_disp,
+            long_business_summary,
+            full_time_employees,
+            audit_risk,
+            board_risk,
+            compensation_risk,
+            shareholder_rights_risk,
+            overall_risk,
+            governance_epoch_date,
+            compensation_as_of_epoch_date,
+            ir_website,
             price,
             prev_close,
             open,
@@ -301,7 +391,55 @@ export const portfolioDataService = {
             fifty_day_average,
             two_hundred_day_average,
             ex_dividend_date,
-            last_fetched
+            operating_cash_flow,
+            free_cash_flow,
+            cash_flow_growth,
+            target_low_price,
+            target_high_price,
+            recommendation_key,
+            number_of_analyst_opinions,
+            total_cash,
+            total_debt,
+            current_ratio,
+            quick_ratio,
+            debt_to_equity,
+            revenue_per_share,
+            return_on_assets,
+            return_on_equity,
+            gross_profits,
+            earnings_growth,
+            revenue_growth,
+            gross_margins,
+            ebitda_margins,
+            operating_margins,
+            profit_margins,
+            total_assets,
+            total_current_assets,
+            total_liabilities,
+            total_current_liabilities,
+            total_stockholder_equity,
+            cash,
+            short_term_investments,
+            net_receivables,
+            inventory,
+            other_current_assets,
+            long_term_investments,
+            property_plant_equipment,
+            other_assets,
+            intangible_assets,
+            goodwill,
+            accounts_payable,
+            short_long_term_debt,
+            other_current_liabilities,
+            long_term_debt,
+            other_liabilities,
+            minority_interest,
+            treasury_stock,
+            retained_earnings,
+            common_stock,
+            capital_surplus,
+            last_fetched,
+            earnings
           )
         `)
         .eq('portfolio_id', portfolioId);
@@ -315,12 +453,130 @@ export const portfolioDataService = {
         return [];
       }
 
-      // Get all unique tickers
-      const tickers = Array.from(new Set((portfolioSecurities as unknown as SupabasePortfolioSecurity[]).map(ps => ps.security.ticker)));
-      if (tickers.length === 0) {
-        console.warn('No tickers found in portfolio securities');
-        return [];
+      // Check if any securities need updating based on last_fetched timestamp
+      const cacheTtl = 5 * 60 * 1000; // 5 minutes in milliseconds
+      const now = new Date();
+      const securitiesNeedingUpdate = (portfolioSecurities as unknown as SupabasePortfolioSecurity[]).filter(ps => {
+        if (!ps.security.last_fetched) return true;
+        const lastFetched = new Date(ps.security.last_fetched);
+        const timeSinceLastFetch = now.getTime() - lastFetched.getTime();
+        return timeSinceLastFetch > cacheTtl;
+      });
+
+      // If no securities need updating, return the current data
+      if (securitiesNeedingUpdate.length === 0) {
+        console.log('All securities are up to date, returning cached data');
+        return (portfolioSecurities as unknown as SupabasePortfolioSecurity[]).map(ps => ({
+          id: ps.id,
+          shares: ps.shares,
+          average_cost: ps.average_cost,
+          security: {
+            id: ps.security.id,
+            ticker: ps.security.ticker,
+            name: ps.security.name,
+            sector: ps.security.sector,
+            industry: ps.security.industry,
+            address1: ps.security.address1,
+            city: ps.security.city,
+            state: ps.security.state,
+            zip: ps.security.zip,
+            country: ps.security.country,
+            phone: ps.security.phone,
+            website: ps.security.website,
+            industry_key: ps.security.industry_key,
+            industry_disp: ps.security.industry_disp,
+            sector_key: ps.security.sector_key,
+            sector_disp: ps.security.sector_disp,
+            long_business_summary: ps.security.long_business_summary,
+            full_time_employees: ps.security.full_time_employees,
+            audit_risk: ps.security.audit_risk,
+            board_risk: ps.security.board_risk,
+            compensation_risk: ps.security.compensation_risk,
+            shareholder_rights_risk: ps.security.shareholder_rights_risk,
+            overall_risk: ps.security.overall_risk,
+            governance_epoch_date: ps.security.governance_epoch_date,
+            compensation_as_of_epoch_date: ps.security.compensation_as_of_epoch_date,
+            ir_website: ps.security.ir_website,
+            price: ps.security.price,
+            prev_close: ps.security.prev_close,
+            open: ps.security.open,
+            volume: ps.security.volume,
+            market_cap: ps.security.market_cap,
+            pe: ps.security.pe,
+            eps: ps.security.eps,
+            dividend: ps.security.dividend,
+            yield: ps.security.yield,
+            dividend_growth_5yr: ps.security.dividend_growth_5yr,
+            payout_ratio: ps.security.payout_ratio,
+            sma200: ps.security.sma200 as 'above' | 'below',
+            tags: ps.security.tags,
+            day_low: ps.security.day_low,
+            day_high: ps.security.day_high,
+            fifty_two_week_low: ps.security.fifty_two_week_low,
+            fifty_two_week_high: ps.security.fifty_two_week_high,
+            average_volume: ps.security.average_volume,
+            forward_pe: ps.security.forward_pe,
+            price_to_sales_trailing_12_months: ps.security.price_to_sales_trailing_12_months,
+            beta: ps.security.beta,
+            fifty_day_average: ps.security.fifty_day_average,
+            two_hundred_day_average: ps.security.two_hundred_day_average,
+            ex_dividend_date: ps.security.ex_dividend_date,
+            operating_cash_flow: ps.security.operating_cash_flow || 0,
+            free_cash_flow: ps.security.free_cash_flow || 0,
+            cash_flow_growth: ps.security.cash_flow_growth || 0,
+            target_low_price: ps.security.target_low_price,
+            target_high_price: ps.security.target_high_price,
+            recommendation_key: ps.security.recommendation_key,
+            number_of_analyst_opinions: ps.security.number_of_analyst_opinions,
+            total_cash: ps.security.total_cash,
+            total_debt: ps.security.total_debt,
+            current_ratio: ps.security.current_ratio,
+            quick_ratio: ps.security.quick_ratio,
+            debt_to_equity: ps.security.debt_to_equity,
+            revenue_per_share: ps.security.revenue_per_share,
+            return_on_assets: ps.security.return_on_assets,
+            return_on_equity: ps.security.return_on_equity,
+            gross_profits: ps.security.gross_profits,
+            earnings_growth: ps.security.earnings_growth,
+            revenue_growth: ps.security.revenue_growth,
+            gross_margins: ps.security.gross_margins,
+            ebitda_margins: ps.security.ebitda_margins,
+            operating_margins: ps.security.operating_margins,
+            profit_margins: ps.security.profit_margins,
+            total_assets: ps.security.total_assets,
+            total_current_assets: ps.security.total_current_assets,
+            total_liabilities: ps.security.total_liabilities,
+            total_current_liabilities: ps.security.total_current_liabilities,
+            total_stockholder_equity: ps.security.total_stockholder_equity,
+            cash: ps.security.cash,
+            short_term_investments: ps.security.short_term_investments,
+            net_receivables: ps.security.net_receivables,
+            inventory: ps.security.inventory,
+            other_current_assets: ps.security.other_current_assets,
+            long_term_investments: ps.security.long_term_investments,
+            property_plant_equipment: ps.security.property_plant_equipment,
+            other_assets: ps.security.other_assets,
+            intangible_assets: ps.security.intangible_assets,
+            goodwill: ps.security.goodwill,
+            accounts_payable: ps.security.accounts_payable,
+            short_long_term_debt: ps.security.short_long_term_debt,
+            other_current_liabilities: ps.security.other_current_liabilities,
+            long_term_debt: ps.security.long_term_debt,
+            other_liabilities: ps.security.other_liabilities,
+            minority_interest: ps.security.minority_interest,
+            treasury_stock: ps.security.treasury_stock,
+            retained_earnings: ps.security.retained_earnings,
+            common_stock: ps.security.common_stock,
+            capital_surplus: ps.security.capital_surplus,
+            last_fetched: ps.security.last_fetched,
+            earnings: ps.security.earnings,
+          }
+        }));
       }
+
+      // Get tickers that need updating
+      const tickersToUpdate = Array.from(new Set(securitiesNeedingUpdate.map(ps => ps.security.ticker)));
+      console.log(`Updating ${tickersToUpdate.length} securities: ${tickersToUpdate.join(', ')}`);
 
       // Get the current session
       const { data: { session } } = await supabase.auth.getSession();
@@ -329,14 +585,14 @@ export const portfolioDataService = {
         throw new Error('Authentication required: No active session');
       }
 
-      // Fetch data for all securities in one batch
+      // Fetch data for securities that need updating
       const response = await fetch('/api/securities/batch', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({ tickers })
+        body: JSON.stringify({ tickers: tickersToUpdate })
       });
 
       if (!response.ok) {
@@ -356,7 +612,7 @@ export const portfolioDataService = {
         results.map(result => [result.ticker, result.data])
       );
 
-      // Update each security with fresh data
+      // Update only the securities that need updating
       const updatedSecurities = await Promise.all(
         (portfolioSecurities as unknown as PortfolioSecurityRecord[]).map(async (ps) => {
           const quoteSummary = quoteSummaryMap.get(ps.security.ticker);
@@ -473,37 +729,123 @@ export const portfolioDataService = {
             .single();
 
           if (updateError) {
-            console.error('Error updating security:', {
-              securityId: ps.security.id,
-              ticker: ps.security.ticker,
-              error: updateError
-            });
-            throw new Error(`Failed to update security ${ps.security.ticker}: ${updateError.message}`);
+            console.error(`Error updating security ${ps.security.ticker}:`, updateError);
+            return ps;
           }
 
-          if (!updatedSecurity) {
-            console.warn('No security data returned after update:', {
-              securityId: ps.security.id,
-              ticker: ps.security.ticker
-            });
-            return ps; // Return original security if update didn't return data
-          }
-
+          // Return the updated security data
           return {
-            ...ps,
-            security: updatedSecurity
+            id: ps.id,
+            shares: ps.shares,
+            average_cost: ps.average_cost,
+            security: {
+              id: updatedSecurity.id,
+              ticker: updatedSecurity.ticker,
+              name: updatedSecurity.name,
+              sector: updatedSecurity.sector,
+              industry: updatedSecurity.industry,
+              address1: updatedSecurity.address1,
+              city: updatedSecurity.city,
+              state: updatedSecurity.state,
+              zip: updatedSecurity.zip,
+              country: updatedSecurity.country,
+              phone: updatedSecurity.phone,
+              website: updatedSecurity.website,
+              industry_key: updatedSecurity.industry_key,
+              industry_disp: updatedSecurity.industry_disp,
+              sector_key: updatedSecurity.sector_key,
+              sector_disp: updatedSecurity.sector_disp,
+              long_business_summary: updatedSecurity.long_business_summary,
+              full_time_employees: updatedSecurity.full_time_employees,
+              audit_risk: updatedSecurity.audit_risk,
+              board_risk: updatedSecurity.board_risk,
+              compensation_risk: updatedSecurity.compensation_risk,
+              shareholder_rights_risk: updatedSecurity.shareholder_rights_risk,
+              overall_risk: updatedSecurity.overall_risk,
+              governance_epoch_date: updatedSecurity.governance_epoch_date,
+              compensation_as_of_epoch_date: updatedSecurity.compensation_as_of_epoch_date,
+              ir_website: updatedSecurity.ir_website,
+              price: updatedSecurity.price,
+              prev_close: updatedSecurity.prev_close,
+              open: updatedSecurity.open,
+              volume: updatedSecurity.volume,
+              market_cap: updatedSecurity.market_cap,
+              pe: updatedSecurity.pe,
+              eps: updatedSecurity.eps,
+              dividend: updatedSecurity.dividend,
+              yield: updatedSecurity.yield,
+              dividend_growth_5yr: updatedSecurity.dividend_growth_5yr,
+              payout_ratio: updatedSecurity.payout_ratio,
+              sma200: updatedSecurity.sma200 as 'above' | 'below',
+              tags: updatedSecurity.tags,
+              day_low: updatedSecurity.day_low,
+              day_high: updatedSecurity.day_high,
+              fifty_two_week_low: updatedSecurity.fifty_two_week_low,
+              fifty_two_week_high: updatedSecurity.fifty_two_week_high,
+              average_volume: updatedSecurity.average_volume,
+              forward_pe: updatedSecurity.forward_pe,
+              price_to_sales_trailing_12_months: updatedSecurity.price_to_sales_trailing_12_months,
+              beta: updatedSecurity.beta,
+              fifty_day_average: updatedSecurity.fifty_day_average,
+              two_hundred_day_average: updatedSecurity.two_hundred_day_average,
+              ex_dividend_date: updatedSecurity.ex_dividend_date,
+              operating_cash_flow: updatedSecurity.operating_cash_flow || 0,
+              free_cash_flow: updatedSecurity.free_cash_flow || 0,
+              cash_flow_growth: updatedSecurity.cash_flow_growth || 0,
+              target_low_price: updatedSecurity.target_low_price,
+              target_high_price: updatedSecurity.target_high_price,
+              recommendation_key: updatedSecurity.recommendation_key,
+              number_of_analyst_opinions: updatedSecurity.number_of_analyst_opinions,
+              total_cash: updatedSecurity.total_cash,
+              total_debt: updatedSecurity.total_debt,
+              current_ratio: updatedSecurity.current_ratio,
+              quick_ratio: updatedSecurity.quick_ratio,
+              debt_to_equity: updatedSecurity.debt_to_equity,
+              revenue_per_share: updatedSecurity.revenue_per_share,
+              return_on_assets: updatedSecurity.return_on_assets,
+              return_on_equity: updatedSecurity.return_on_equity,
+              gross_profits: updatedSecurity.gross_profits,
+              earnings_growth: updatedSecurity.earnings_growth,
+              revenue_growth: updatedSecurity.revenue_growth,
+              gross_margins: updatedSecurity.gross_margins,
+              ebitda_margins: updatedSecurity.ebitda_margins,
+              operating_margins: updatedSecurity.operating_margins,
+              profit_margins: updatedSecurity.profit_margins,
+              total_assets: updatedSecurity.total_assets,
+              total_current_assets: updatedSecurity.total_current_assets,
+              total_liabilities: updatedSecurity.total_liabilities,
+              total_current_liabilities: updatedSecurity.total_current_liabilities,
+              total_stockholder_equity: updatedSecurity.total_stockholder_equity,
+              cash: updatedSecurity.cash,
+              short_term_investments: updatedSecurity.short_term_investments,
+              net_receivables: updatedSecurity.net_receivables,
+              inventory: updatedSecurity.inventory,
+              other_current_assets: updatedSecurity.other_current_assets,
+              long_term_investments: updatedSecurity.long_term_investments,
+              property_plant_equipment: updatedSecurity.property_plant_equipment,
+              other_assets: updatedSecurity.other_assets,
+              intangible_assets: updatedSecurity.intangible_assets,
+              goodwill: updatedSecurity.goodwill,
+              accounts_payable: updatedSecurity.accounts_payable,
+              short_long_term_debt: updatedSecurity.short_long_term_debt,
+              other_current_liabilities: updatedSecurity.other_current_liabilities,
+              long_term_debt: updatedSecurity.long_term_debt,
+              other_liabilities: updatedSecurity.other_liabilities,
+              minority_interest: updatedSecurity.minority_interest,
+              treasury_stock: updatedSecurity.treasury_stock,
+              retained_earnings: updatedSecurity.retained_earnings,
+              common_stock: updatedSecurity.common_stock,
+              capital_surplus: updatedSecurity.capital_surplus,
+              last_fetched: updatedSecurity.last_fetched,
+              earnings: updatedSecurity.earnings,
+            }
           };
         })
       );
 
       return updatedSecurities;
     } catch (error) {
-      console.error('Error updating portfolio securities:', {
-        error,
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        details: error
-      });
+      console.error('Error updating portfolio securities:', error);
       throw error;
     }
   }
