@@ -1,26 +1,25 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
 import { PortfolioDetail } from './portfolio-detail';
-import { use } from 'react';
+import { useEffect, useState } from 'react';
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 export default function Page({ params }: PageProps) {
-  const { id } = use(params);
-  const searchParams = useSearchParams();
-  const portfolioParam = searchParams?.get('portfolio');
+  const [id, setId] = useState<string | null>(null);
   
-  let portfolio = null;
-  if (portfolioParam) {
-    try {
-      portfolio = JSON.parse(portfolioParam);
-    } catch (error) {
-      console.error('Error parsing portfolio:', error);
-    }
+  useEffect(() => {
+    params.then(({ id }) => setId(id));
+  }, [params]);
+
+  // Show loading while params are being resolved
+  if (!id) {
+    return <div>Loading...</div>;
   }
-  
-  return <PortfolioDetail portfolioId={id} initialPortfolio={portfolio} />;
+
+  // Always pass initialPortfolio as null to force fresh data fetch
+  // This ensures that newly added securities appear after page refresh
+  return <PortfolioDetail portfolioId={id} initialPortfolio={null} />;
 }

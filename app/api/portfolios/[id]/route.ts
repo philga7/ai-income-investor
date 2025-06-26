@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { portfolioDataService } from '@/src/services/portfolioDataService';
 
 export async function GET(
   request: NextRequest,
@@ -7,6 +8,7 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { id } = await params;
+    
     const authHeader = request.headers.get('Authorization');
 
     if (!authHeader?.startsWith('Bearer ')) {
@@ -68,7 +70,56 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(portfolio);
+    // Use the centralized TTL-based mechanism to fetch securities with automatic fundamentals refresh
+    let portfolioSecurities;
+    try {
+      portfolioSecurities = await portfolioDataService.updatePortfolioSecurities(id, supabase, token);
+    } catch (error) {
+      console.error('Error calling updatePortfolioSecurities:', error);
+      // Fallback to a simple query to get basic securities data
+      const { data: fallbackSecurities, error: fallbackError } = await supabase
+        .from('portfolio_securities')
+        .select(`
+          id,
+          security_id,
+          shares,
+          average_cost,
+          security:securities (
+            id,
+            ticker,
+            name,
+            sector,
+            price,
+            yield
+          )
+        `)
+        .eq('portfolio_id', id);
+
+      if (fallbackError) {
+        console.error('Fallback query also failed:', fallbackError);
+        throw new Error('Failed to fetch portfolio securities');
+      }
+
+      portfolioSecurities = fallbackSecurities?.map((ps: any) => ({
+        id: ps.id,
+        shares: ps.shares,
+        average_cost: ps.average_cost,
+        security: ps.security
+      })) || [];
+    }
+
+    // Transform the data to include securities in the expected format
+    const transformedPortfolio = {
+      ...portfolio,
+      securities: portfolioSecurities.map((ps) => ({
+        id: ps.id,
+        shares: ps.shares,
+        average_cost: ps.average_cost,
+        security: ps.security
+      }))
+    };
+
+    return NextResponse.json(transformedPortfolio);
   } catch (error) {
     console.error('Error in portfolio fetch:', error);
     return NextResponse.json(

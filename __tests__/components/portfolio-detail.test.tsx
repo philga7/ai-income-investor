@@ -262,7 +262,7 @@ describe('PortfolioDetail', () => {
       render(<PortfolioDetail portfolioId="123" />);
     });
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    expect(screen.getByText('Loading portfolio...')).toBeInTheDocument();
   });
 
   it('should show portfolio not found when portfolio is null', async () => {

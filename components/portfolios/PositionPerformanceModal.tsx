@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PortfolioSecurity } from "@/services/portfolioService";
 import { HistoricalPositionDataWithSMA, PositionPerformanceMetrics, historicalPositionService } from "@/src/services/historicalPositionService";
@@ -59,6 +59,9 @@ export function PositionPerformanceModal({ security, isOpen, onClose }: Position
             <span className="font-bold">{security.security.ticker}</span>
             <span className="text-muted-foreground">- {security.security.name}</span>
           </DialogTitle>
+          <DialogDescription>
+            View detailed performance metrics and historical price data for this security position.
+          </DialogDescription>
         </DialogHeader>
         
         {loading && (

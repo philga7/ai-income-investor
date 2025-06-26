@@ -45,12 +45,16 @@ class YahooFinanceClient {
 
   public clearCache(): void {
     this.cache.clear();
-    console.log('YahooFinanceClient: Cache manually cleared');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('YahooFinanceClient: Cache manually cleared');
+    }
   }
 
   private clearCacheInternal(): void {
     this.cache.clear();
-    console.log('YahooFinanceClient: Cache cleared due to invalid crumb error');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('YahooFinanceClient: Cache cleared due to invalid crumb error');
+    }
   }
 
   private async retryWithCacheClear<T>(
@@ -68,7 +72,9 @@ class YahooFinanceClient {
         
         // Check if it's an "Invalid Crumb" error
         if (errorMessage.includes('Invalid Crumb') || errorMessage.includes('invalid crumb')) {
-          console.log(`YahooFinanceClient: Invalid crumb error on attempt ${attempt}, clearing cache and retrying...`);
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`YahooFinanceClient: Invalid crumb error on attempt ${attempt}, clearing cache and retrying...`);
+          }
           this.clearCacheInternal();
           
           // Add a delay before retrying with exponential backoff
@@ -77,7 +83,9 @@ class YahooFinanceClient {
               ? YAHOO_FINANCE_CONFIG.retry.invalidCrumbDelay * Math.pow(2, attempt - 1)
               : YAHOO_FINANCE_CONFIG.retry.invalidCrumbDelay;
             
-            console.log(`YahooFinanceClient: Waiting ${delay}ms before retry ${attempt + 1}...`);
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`YahooFinanceClient: Waiting ${delay}ms before retry ${attempt + 1}...`);
+            }
             await new Promise(resolve => setTimeout(resolve, delay));
           }
           continue;
@@ -136,62 +144,50 @@ class YahooFinanceClient {
   }
 
   private transformEarnings(earnings: any): Earnings {
-    return {
-      maxAge: earnings.maxAge ?? 0,
-      earningsDate: earnings.earningsChart.earningsDate.map((date: any) => {
+    const safeDateConversion = (date: any): number => {
+      try {
         if (date instanceof Date) {
           return date.getTime();
         }
-        // If it's already a timestamp, return it
         if (typeof date === 'number') {
           return date;
         }
-        // If it's a string, convert to timestamp
         if (typeof date === 'string') {
-          return new Date(date).getTime();
+          const converted = new Date(date);
+          return isNaN(converted.getTime()) ? 0 : converted.getTime();
         }
         return 0;
-      }),
+      } catch (error) {
+        return 0;
+      }
+    };
+
+    return {
+      maxAge: earnings.maxAge ?? 0,
+      earningsDate: earnings.earningsChart.earningsDate.map((date: any) => safeDateConversion(date)),
       earningsAverage: earnings.earningsChart.currentQuarterEstimate ?? 0,
       earningsLow: earnings.earningsChart.quarterly[0]?.estimate ?? 0,
       earningsHigh: earnings.earningsChart.quarterly[0]?.estimate ?? 0,
       earningsChart: {
         quarterly: earnings.earningsChart.quarterly.map((q: any) => ({
-          date: q.date instanceof Date ? q.date.getTime() : 
-                typeof q.date === 'number' ? q.date :
-                typeof q.date === 'string' ? new Date(q.date).getTime() : 0,
+          date: safeDateConversion(q.date),
           actual: q.actual ?? 0,
           estimate: q.estimate ?? 0
         })) ?? [],
         currentQuarterEstimate: earnings.earningsChart.currentQuarterEstimate ?? 0,
         currentQuarterEstimateDate: earnings.earningsChart.currentQuarterEstimateDate ?? '',
         currentQuarterEstimateYear: earnings.earningsChart.currentQuarterEstimateYear ?? 0,
-        earningsDate: earnings.earningsChart.earningsDate.map((date: any) => {
-          if (date instanceof Date) {
-            return date.getTime();
-          }
-          if (typeof date === 'number') {
-            return date;
-          }
-          if (typeof date === 'string') {
-            return new Date(date).getTime();
-          }
-          return 0;
-        }) ?? [],
+        earningsDate: earnings.earningsChart.earningsDate.map((date: any) => safeDateConversion(date)) ?? [],
         isEarningsDateEstimate: earnings.earningsChart.isEarningsDateEstimate ?? false
       },
       financialsChart: {
         yearly: earnings.financialsChart.yearly.map((y: any) => ({
-          date: y.date instanceof Date ? y.date.getTime() :
-                typeof y.date === 'number' ? y.date :
-                typeof y.date === 'string' ? new Date(y.date).getTime() : 0,
+          date: safeDateConversion(y.date),
           revenue: y.revenue ?? 0,
           earnings: y.earnings ?? 0
         })) ?? [],
         quarterly: earnings.financialsChart.quarterly.map((q: any) => ({
-          date: q.date instanceof Date ? q.date.getTime() :
-                typeof q.date === 'number' ? q.date :
-                typeof q.date === 'string' ? new Date(q.date).getTime() : 0,
+          date: safeDateConversion(q.date),
           revenue: q.revenue ?? 0,
           earnings: q.earnings ?? 0
         })) ?? []
@@ -201,13 +197,51 @@ class YahooFinanceClient {
   }
 
   private transformPrice(price: any): Price {
+    const safeDateConversion = (date: any): number | undefined => {
+      try {
+        if (!date) return undefined;
+        if (date instanceof Date) {
+          return date.getTime();
+        }
+        if (typeof date === 'number') {
+          return date;
+        }
+        if (typeof date === 'string') {
+          const converted = new Date(date);
+          return isNaN(converted.getTime()) ? undefined : converted.getTime();
+        }
+        return undefined;
+      } catch (error) {
+        return undefined;
+      }
+    };
+
     return {
       ...price,
-      regularMarketTime: price.regularMarketTime?.getTime(),
+      regularMarketTime: safeDateConversion(price.regularMarketTime),
     };
   }
 
   private transformSummaryDetail(summary: any): SummaryDetail {
+    const safeDateConversion = (date: any): number | undefined => {
+      try {
+        if (!date) return undefined;
+        if (date instanceof Date) {
+          return date.getTime();
+        }
+        if (typeof date === 'number') {
+          return date;
+        }
+        if (typeof date === 'string') {
+          const converted = new Date(date);
+          return isNaN(converted.getTime()) ? undefined : converted.getTime();
+        }
+        return undefined;
+      } catch (error) {
+        return undefined;
+      }
+    };
+
     return {
       previousClose: summary.previousClose,
       open: summary.open,
@@ -219,7 +253,7 @@ class YahooFinanceClient {
       regularMarketDayHigh: summary.regularMarketDayHigh,
       dividendRate: summary.dividendRate,
       dividendYield: summary.dividendYield,
-      exDividendDate: summary.exDividendDate?.getTime(),
+      exDividendDate: safeDateConversion(summary.exDividendDate),
       payoutRatio: summary.payoutRatio,
       fiveYearAvgDividendYield: summary.fiveYearAvgDividendYield,
       beta: summary.beta,
@@ -238,7 +272,7 @@ class YahooFinanceClient {
       yield: summary.yield,
       ytdReturn: summary.ytdReturn,
       totalAssets: summary.totalAssets,
-      expireDate: summary.expireDate?.getTime(),
+      expireDate: safeDateConversion(summary.expireDate),
       strikePrice: summary.strikePrice,
       openInterest: summary.openInterest,
       fiftyTwoWeekLow: summary.fiftyTwoWeekLow,
@@ -286,6 +320,25 @@ class YahooFinanceClient {
   }
 
   private transformAssetProfile(profile: any): AssetProfile {
+    const safeDateConversion = (date: any): number | undefined => {
+      try {
+        if (!date) return undefined;
+        if (date instanceof Date) {
+          return date.getTime();
+        }
+        if (typeof date === 'number') {
+          return date;
+        }
+        if (typeof date === 'string') {
+          const converted = new Date(date);
+          return isNaN(converted.getTime()) ? undefined : converted.getTime();
+        }
+        return undefined;
+      } catch (error) {
+        return undefined;
+      }
+    };
+
     return {
       address1: profile.address1,
       city: profile.city,
@@ -317,8 +370,8 @@ class YahooFinanceClient {
       compensationRisk: profile.compensationRisk,
       shareHolderRightsRisk: profile.shareHolderRightsRisk,
       overallRisk: profile.overallRisk,
-      governanceEpochDate: profile.governanceEpochDate?.getTime(),
-      compensationAsOfEpochDate: profile.compensationAsOfEpochDate?.getTime(),
+      governanceEpochDate: safeDateConversion(profile.governanceEpochDate),
+      compensationAsOfEpochDate: safeDateConversion(profile.compensationAsOfEpochDate),
       irWebsite: profile.irWebsite,
       executiveTeam: profile.executiveTeam,
       maxAge: profile.maxAge
@@ -329,21 +382,29 @@ class YahooFinanceClient {
     symbol: string,
     modules: readonly YahooFinanceModule[] = YAHOO_FINANCE_CONFIG.defaultModules
   ): Promise<QuoteSummary> {
-    console.log('YahooFinanceClient: Getting quote summary for', symbol);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('YahooFinanceClient: Getting quote summary for', symbol);
+    }
     const cacheKey = `quote_summary_${symbol}_${modules.join('_')}`;
     const cachedData = this.getCachedData<QuoteSummary>(cacheKey);
     if (cachedData) {
-      console.log('YahooFinanceClient: Using cached data for', symbol);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('YahooFinanceClient: Using cached data for', symbol);
+      }
       return cachedData;
     }
 
     return this.retryWithCacheClear(async () => {
-      console.log('YahooFinanceClient: Making API call for', symbol);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('YahooFinanceClient: Making API call for', symbol);
+      }
       const result = await yahooFinance.quoteSummary(symbol, {
         modules: [...modules],
       });
 
-      console.log('YahooFinanceClient: Got raw result for', symbol, result);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('YahooFinanceClient: Got raw result for', symbol, result);
+      }
 
       // Transform the result to match our QuoteSummary type
       const transformedResult: QuoteSummary = {
@@ -367,7 +428,9 @@ class YahooFinanceClient {
         financialData: result.financialData ? this.transformFinancialData(result.financialData) : undefined,
       };
 
-      console.log('YahooFinanceClient: Transformed result for', symbol, transformedResult);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('YahooFinanceClient: Transformed result for', symbol, transformedResult);
+      }
 
       this.setCachedData(cacheKey, transformedResult);
       return transformedResult;

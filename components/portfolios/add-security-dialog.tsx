@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,6 +17,10 @@ import { financialService } from '@/services/financialService';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { SearchResult } from '@/lib/financial/api/yahoo/types';
+import { SecurityLotFormData } from '@/types/lots';
+import { LotEntryForm } from './lot-entry-form';
+import { LotSummary } from './lot-summary';
+import { lotService } from '@/src/services/lotService';
 
 interface AddSecurityDialogProps {
   portfolioId: string;
@@ -30,18 +34,31 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded, existingTicker
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [selectedSecurity, setSelectedSecurity] = useState<SearchResult | null>(null);
-  const [formData, setFormData] = useState({
-    shares: '',
-    averageCost: '',
+  const [lots, setLots] = useState<SecurityLotFormData[]>([
+    {
+      open_date: '',
+      quantity: '',
+      price_per_share: '',
+      notes: ''
+    }
+  ]);
+  const [totals, setTotals] = useState({
+    totalShares: 0,
+    totalCost: 0,
+    averageCost: 0
   });
 
-  // Ref for Number of Shares input
-  const sharesInputRef = useRef<HTMLInputElement>(null);
+  const selectedSecurityRef = useRef<HTMLDivElement>(null);
 
-  // Focus Number of Shares input when a security is selected
+  // Scroll to selected security section when security is selected
   useEffect(() => {
-    if (selectedSecurity && sharesInputRef.current) {
-      sharesInputRef.current.focus();
+    if (selectedSecurity && selectedSecurityRef.current) {
+      setTimeout(() => {
+        selectedSecurityRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }, 100); // Small delay to ensure the section is rendered
     }
   }, [selectedSecurity]);
 
@@ -80,6 +97,16 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded, existingTicker
   const handleAddSecurity = async () => {
     if (!selectedSecurity) return;
 
+    // Validate lots
+    const validLots = lots.filter(lot => 
+      lot.open_date && lot.quantity && lot.price_per_share
+    );
+
+    if (validLots.length === 0) {
+      toast.error('Please add at least one valid lot');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -88,6 +115,7 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded, existingTicker
         throw new Error('No authentication token found');
       }
 
+      // First, ensure the security exists in the database
       const response = await fetch(`/api/portfolios/${portfolioId}/securities`, {
         method: 'POST',
         headers: {
@@ -96,8 +124,8 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded, existingTicker
         },
         body: JSON.stringify({
           ticker: selectedSecurity.symbol,
-          shares: parseInt(formData.shares),
-          average_cost: parseFloat(formData.averageCost),
+          shares: totals.totalShares,
+          average_cost: totals.averageCost,
         }),
       });
 
@@ -106,13 +134,15 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded, existingTicker
         throw new Error(error.error || 'Failed to add security');
       }
 
-      toast.success('Security added successfully');
+      const portfolioSecurity = await response.json();
+
+      // Now create the lots
+      await lotService.createLots(portfolioId, portfolioSecurity.security_id, validLots);
+
+      toast.success('Security added successfully with lots');
       onSecurityAdded?.();
       setIsOpen(false);
-      setSearchQuery('');
-      setSearchResults([]);
-      setSelectedSecurity(null);
-      setFormData({ shares: '', averageCost: '' });
+      resetForm();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to add security');
     } finally {
@@ -120,16 +150,37 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded, existingTicker
     }
   };
 
+  const resetForm = () => {
+    setSearchQuery('');
+    setSearchResults([]);
+    setSelectedSecurity(null);
+    setLots([{
+      open_date: '',
+      quantity: '',
+      price_per_share: '',
+      notes: ''
+    }]);
+    setTotals({
+      totalShares: 0,
+      totalCost: 0,
+      averageCost: 0
+    });
+  };
+
+  const handleTotalsChange = useCallback((newTotals: { totalShares: number; totalCost: number; averageCost: number }) => {
+    setTotals(newTotals);
+  }, []);
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button>Add Security</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>Add Security</DialogTitle>
           <DialogDescription>
-            Search for a security to add to your portfolio
+            Search for a security and add purchase lots to your portfolio
           </DialogDescription>
         </DialogHeader>
 
@@ -165,10 +216,11 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded, existingTicker
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {searchResults.map((security) => {
+                    {searchResults.map((security, index) => {
                       const alreadyAdded = existingTickers.includes(security.symbol);
+                      const uniqueKey = `${security.symbol}-${security.exchange}-${index}`;
                       return (
-                        <TableRow key={security.symbol}>
+                        <TableRow key={uniqueKey}>
                           <TableCell className="font-medium">{security.symbol}</TableCell>
                           <TableCell>{security.shortname || security.longname}</TableCell>
                           <TableCell>{security.exchange}</TableCell>
@@ -177,13 +229,13 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded, existingTicker
                           </TableCell>
                           <TableCell className="text-right">
                             <Button
-                              variant="outline"
+                              variant={selectedSecurity?.symbol === security.symbol ? "default" : "outline"}
                               size="sm"
                               onClick={() => setSelectedSecurity(security)}
                               disabled={alreadyAdded}
                               title={alreadyAdded ? 'Already in portfolio' : ''}
                             >
-                              {alreadyAdded ? 'Added' : 'Select'}
+                              {alreadyAdded ? 'Added' : selectedSecurity?.symbol === security.symbol ? 'Selected' : 'Select'}
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -196,7 +248,7 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded, existingTicker
           )}
 
           {selectedSecurity && (
-            <div className="space-y-4 border-t pt-4">
+            <div ref={selectedSecurityRef} className="space-y-6 border-t pt-4">
               <div className="space-y-2">
                 <h4 className="font-medium">Selected Security</h4>
                 <div className="flex items-center gap-2">
@@ -205,27 +257,19 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded, existingTicker
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Number of Shares</label>
-                  <Input
-                    ref={sharesInputRef}
-                    type="number"
-                    min="1"
-                    placeholder="e.g., 100"
-                    value={formData.shares}
-                    onChange={(e) => setFormData({ ...formData, shares: e.target.value })}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <LotEntryForm 
+                    lots={lots}
+                    onChange={setLots}
+                    onTotalsChange={handleTotalsChange}
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Average Cost per Share</label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    placeholder="e.g., 150.00"
-                    value={formData.averageCost}
-                    onChange={(e) => setFormData({ ...formData, averageCost: e.target.value })}
+                <div>
+                  <LotSummary 
+                    totalShares={totals.totalShares}
+                    totalCost={totals.totalCost}
+                    averageCost={totals.averageCost}
                   />
                 </div>
               </div>
@@ -243,7 +287,7 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded, existingTicker
           </Button>
           <Button
             onClick={handleAddSecurity}
-            disabled={isLoading || !selectedSecurity || !formData.shares || !formData.averageCost}
+            disabled={isLoading || !selectedSecurity || totals.totalShares === 0}
           >
             {isLoading ? 'Adding...' : 'Add Security'}
           </Button>

@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { getAnthropicClient } from '@/lib/ai/anthropic-client';
 import { aiAnalysisCacheService } from '@/src/services/aiAnalysisCacheService';
 import { enhancedPortfolioAnalysisService, AIAnalysisRequest } from '@/src/services/enhancedPortfolioAnalysisService';
+import { portfolioDataService } from '@/src/services/portfolioDataService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,16 +68,13 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Fetch portfolio data with securities
+    // Fetch portfolio data with securities using centralized TTL mechanism
+    const portfolioSecurities = await portfolioDataService.updatePortfolioSecurities(portfolioId, supabase, token);
+    
+    // Get basic portfolio info
     const { data: portfolio, error: portfolioError } = await supabase
       .from('portfolios')
-      .select(`
-        *,
-        portfolio_securities(
-          *,
-          securities(*)
-        )
-      `)
+      .select('*')
       .eq('id', portfolioId)
       .eq('user_id', user.id)
       .single();
@@ -84,7 +82,7 @@ export async function POST(request: NextRequest) {
     console.log('Portfolio with securities:', { 
       portfolioId: portfolio?.id, 
       name: portfolio?.name, 
-      securitiesCount: portfolio?.portfolio_securities?.length,
+      securitiesCount: portfolioSecurities?.length,
       error: portfolioError 
     });
 
@@ -103,38 +101,12 @@ export async function POST(request: NextRequest) {
       description: portfolio.description,
       created_at: portfolio.created_at,
       updated_at: portfolio.updated_at,
-      securities: portfolio.portfolio_securities?.map((ps: any) => ({
+      securities: portfolioSecurities.map((ps) => ({
+        id: ps.id,
         shares: ps.shares,
         average_cost: ps.average_cost,
-        security: {
-          id: ps.securities.id,
-          ticker: ps.securities.ticker,
-          name: ps.securities.name,
-          price: ps.securities.price,
-          prev_close: ps.securities.prev_close,
-          dividend: ps.securities.dividend,
-          yield: ps.securities.yield,
-          sector: ps.securities.sector,
-          payout_ratio: ps.securities.payout_ratio,
-          dividend_growth_5yr: ps.securities.dividend_growth_5yr,
-          market_cap: ps.securities.market_cap,
-          pe: ps.securities.pe,
-          forward_pe: ps.securities.forward_pe,
-          price_to_sales_trailing_12_months: ps.securities.price_to_sales_trailing_12_months,
-          beta: ps.securities.beta,
-          return_on_equity: ps.securities.return_on_equity,
-          return_on_assets: ps.securities.return_on_assets,
-          profit_margins: ps.securities.profit_margins,
-          operating_margins: ps.securities.operating_margins,
-          debt_to_equity: ps.securities.debt_to_equity,
-          current_ratio: ps.securities.current_ratio,
-          quick_ratio: ps.securities.quick_ratio,
-          free_cash_flow: ps.securities.free_cash_flow,
-          operating_cash_flow: ps.securities.operating_cash_flow,
-          revenue_growth: ps.securities.revenue_growth,
-          earnings_growth: ps.securities.earnings_growth
-        }
-      })) || []
+        security: ps.security
+      }))
     };
 
     console.log('Transformed portfolio data:', {

@@ -46,7 +46,7 @@ describe('portfolioDataService', () => {
         }))
       }));
 
-      const result = await portfolioDataService.updatePortfolioSecurities('123');
+      const result = await portfolioDataService.updatePortfolioSecurities('123', mockSupabase);
       expect(result).toEqual([]);
       expect(console.warn).toHaveBeenCalledWith('No tickers found in portfolio securities');
     });
@@ -63,7 +63,7 @@ describe('portfolioDataService', () => {
         }))
       }));
 
-      const result = await portfolioDataService.updatePortfolioSecurities('123');
+      const result = await portfolioDataService.updatePortfolioSecurities('123', mockSupabase);
       expect(result).toEqual([]);
       expect(console.warn).toHaveBeenCalledWith('No portfolio securities found for portfolio:', '123');
     });
@@ -86,7 +86,7 @@ describe('portfolioDataService', () => {
         json: () => Promise.resolve([]),
       }));
 
-      const result = await portfolioDataService.updatePortfolioSecurities('123');
+      const result = await portfolioDataService.updatePortfolioSecurities('123', mockSupabase);
       expect(result).toEqual([]);
       expect(console.warn).toHaveBeenCalledWith('No tickers found in portfolio securities');
     });
@@ -149,11 +149,61 @@ describe('portfolioDataService', () => {
         }])
       }));
 
-      const result = await portfolioDataService.updatePortfolioSecurities('123');
+      const result = await portfolioDataService.updatePortfolioSecurities('123', mockSupabase);
       expect(result).toHaveLength(1);
       expect(result[0].security.ticker).toBe('AAPL');
       expect(result[0].security.price).toBe(175.50);
       expect(result[0].security.yield).toBe(0.5);
+    });
+
+    it('should handle database errors gracefully', async () => {
+      const mockSupabase = require('@/lib/supabase').supabase;
+      mockSupabase.from.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockResolvedValue({
+            data: null,
+            error: { message: 'Database error' }
+          })
+        })
+      });
+
+      // The function should throw an error when there's a database error
+      await expect(portfolioDataService.updatePortfolioSecurities('123', mockSupabase))
+        .rejects.toThrow('Failed to fetch portfolio securities: Database error');
+    });
+
+    it('should update securities when TTL expires', async () => {
+      const mockSupabase = require('@/lib/supabase').supabase;
+      const oldDate = new Date(Date.now() - 10 * 60 * 1000); // 10 minutes ago
+      mockSupabase.from.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockResolvedValue({
+            data: [{
+              id: '1',
+              shares: 100,
+              average_cost: 50,
+              security: {
+                id: 'sec1',
+                ticker: 'AAPL',
+                name: 'Apple Inc.',
+                last_fetched: oldDate.toISOString(),
+                price: 100,
+                yield: 2.5,
+                sector: 'Technology',
+                sma200: 'above',
+                tags: []
+              }
+            }],
+            error: null
+          })
+        })
+      });
+
+      const result = await portfolioDataService.updatePortfolioSecurities('123', mockSupabase);
+      expect(result).toHaveLength(1);
+      expect(result[0].security.ticker).toBe('AAPL');
+      expect(result[0].security.price).toBe(100);
+      expect(result[0].security.yield).toBe(2.5);
     });
   });
 }); 

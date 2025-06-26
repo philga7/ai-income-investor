@@ -11,10 +11,10 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Pencil } from 'lucide-react';
-import Link from 'next/link';
 import { DeleteSecurityDialog } from './delete-security-dialog';
 import { AddSecurityDialog } from './add-security-dialog';
 import { PositionPerformanceModal } from './PositionPerformanceModal';
+import { EditSecurityDialog } from './edit-security-dialog';
 import { portfolioAnalyticsService } from "@/src/services/portfolioAnalyticsService";
 
 interface PortfolioSecuritiesProps {
@@ -27,10 +27,12 @@ interface PortfolioSecuritiesProps {
 export function PortfolioSecurities({ securities, portfolioId, onSecurityDeleted, onSecurityAdded }: PortfolioSecuritiesProps) {
   const [selectedSecurity, setSelectedSecurity] = useState<PortfolioSecurity | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedSecurityForEdit, setSelectedSecurityForEdit] = useState<PortfolioSecurity | null>(null);
 
   // Ensure securities is always an array to prevent mapping errors
   const safeSecurities = securities || [];
-
+  
   const analytics = portfolioAnalyticsService.calculatePortfolioAnalytics({
     id: portfolioId,
     name: '',
@@ -48,6 +50,22 @@ export function PortfolioSecurities({ securities, portfolioId, onSecurityDeleted
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedSecurity(null);
+  };
+
+  const handleEditSecurity = (security: PortfolioSecurity, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedSecurityForEdit(security);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedSecurityForEdit(null);
+  };
+
+  const handleSecurityUpdated = () => {
+    // Refresh the portfolio data when security is updated
+    onSecurityAdded?.();
   };
 
   return (
@@ -123,11 +141,14 @@ export function PortfolioSecurities({ securities, portfolioId, onSecurityDeleted
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Link href={`/portfolios/${portfolioId}/securities/${ps.id}/edit`}>
-                          <Button variant="ghost" size="icon">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => handleEditSecurity(ps, e)}
+                          title="Edit Security & Lots"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <DeleteSecurityDialog
                           portfolioId={portfolioId}
                           securityId={ps.id}
@@ -149,6 +170,15 @@ export function PortfolioSecurities({ securities, portfolioId, onSecurityDeleted
         security={selectedSecurity}
         isOpen={isModalOpen}
         onClose={handleCloseModal}
+      />
+
+      {/* Edit Security Dialog */}
+      <EditSecurityDialog
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        portfolioId={portfolioId}
+        security={selectedSecurityForEdit}
+        onSecurityUpdated={handleSecurityUpdated}
       />
     </div>
   );

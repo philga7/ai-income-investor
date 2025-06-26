@@ -260,7 +260,60 @@ interface SupabasePortfolioSecurity {
 }
 
 export const portfolioDataService = {
-  async updatePortfolioSecurities(portfolioId: string): Promise<PortfolioSecurity[]> {
+  // Development utility to analyze portfolio data quality
+  analyzePortfolioDataQuality(portfolioSecurities: PortfolioSecurity[]): void {
+    if (process.env.NODE_ENV !== 'development') return;
+    
+    console.group('🔍 Portfolio Data Quality Analysis');
+    
+    const analysis = portfolioSecurities.map(ps => {
+      const security = ps.security;
+      const hasFinancialData = !!(security.total_cash || security.total_debt || security.current_ratio);
+      const hasBalanceSheet = !!(security.total_assets || security.cash || security.inventory);
+      const hasEarnings = !!security.earnings;
+      const hasPrice = !!security.price;
+      
+      return {
+        ticker: security.ticker,
+        name: security.name,
+        dataQuality: {
+          price: hasPrice ? '✅' : '❌',
+          financialData: hasFinancialData ? '✅' : '❌',
+          balanceSheet: hasBalanceSheet ? '✅' : '❌',
+          earnings: hasEarnings ? '✅' : '❌'
+        },
+        completeness: [hasPrice, hasFinancialData, hasBalanceSheet, hasEarnings].filter(Boolean).length / 4 * 100,
+        lastFetched: security.last_fetched
+      };
+    });
+    
+    const issues = analysis.filter(item => item.completeness < 100);
+    const healthy = analysis.filter(item => item.completeness === 100);
+    
+    console.log(`📈 Data Quality Summary:`);
+    console.log(`   ✅ Healthy securities: ${healthy.length}`);
+    console.log(`   ⚠️  Securities with issues: ${issues.length}`);
+    console.log(`   📊 Average completeness: ${(analysis.reduce((sum, item) => sum + item.completeness, 0) / analysis.length).toFixed(1)}%`);
+    
+    if (issues.length > 0) {
+      console.log(`\n⚠️  Securities needing attention:`);
+      issues.forEach(item => {
+        console.log(`   ${item.ticker} (${item.name}): ${item.completeness.toFixed(0)}% complete`);
+        console.log(`     ${item.dataQuality.price} Price | ${item.dataQuality.financialData} Financial | ${item.dataQuality.balanceSheet} Balance Sheet | ${item.dataQuality.earnings} Earnings`);
+      });
+    }
+    
+    console.groupEnd();
+  },
+
+  async updatePortfolioSecurities(portfolioId: string, supabaseClient: any, authToken?: string): Promise<PortfolioSecurity[]> {
+    // Require the authenticated client - no fallback to client-side client
+    const client = supabaseClient;
+    
+    if (!client) {
+      throw new Error('Authenticated Supabase client is required');
+    }
+    
     try {
       // Helper function to format dates
       const formatDate = (timestamp: number | undefined, fieldName?: string) => {
@@ -333,7 +386,7 @@ export const portfolioDataService = {
       };
 
       // Fetch portfolio securities from the database
-      const { data: portfolioSecurities, error: fetchError } = await supabase
+      const { data: portfolioSecurities, error: fetchError } = await client
         .from('portfolio_securities')
         .select(`
           id,
@@ -459,142 +512,174 @@ export const portfolioDataService = {
 
       // Check if any securities need updating based on last_fetched timestamp
       const cacheTtl = 5 * 60 * 1000; // 5 minutes in milliseconds
+      const newSecurityTtl = 30 * 1000; // 30 seconds for newly added securities
       const now = new Date();
       const securitiesNeedingUpdate = (portfolioSecurities as unknown as SupabasePortfolioSecurity[]).filter(ps => {
         if (!ps.security.last_fetched) return true;
         const lastFetched = new Date(ps.security.last_fetched);
         const timeSinceLastFetch = now.getTime() - lastFetched.getTime();
-        return timeSinceLastFetch > cacheTtl;
+        
+        // Use shorter TTL for newly added securities (less than 5 minutes old)
+        const isNewSecurity = timeSinceLastFetch < 5 * 60 * 1000;
+        const ttl = isNewSecurity ? newSecurityTtl : cacheTtl;
+        
+        return timeSinceLastFetch > ttl;
       });
 
-      // If no securities need updating, return the current data
+      // Always return fresh portfolio structure data from the database
+      // Only apply caching to price updates, not to portfolio structure changes
+      const freshPortfolioData = (portfolioSecurities as unknown as SupabasePortfolioSecurity[]).map(ps => ({
+        id: ps.id,
+        shares: ps.shares,
+        average_cost: ps.average_cost,
+        security: {
+          id: ps.security.id,
+          ticker: ps.security.ticker,
+          name: ps.security.name,
+          sector: ps.security.sector,
+          industry: ps.security.industry,
+          address1: ps.security.address1,
+          city: ps.security.city,
+          state: ps.security.state,
+          zip: ps.security.zip,
+          country: ps.security.country,
+          phone: ps.security.phone,
+          website: ps.security.website,
+          industry_key: ps.security.industry_key,
+          industry_disp: ps.security.industry_disp,
+          sector_key: ps.security.sector_key,
+          sector_disp: ps.security.sector_disp,
+          long_business_summary: ps.security.long_business_summary,
+          full_time_employees: ps.security.full_time_employees,
+          audit_risk: ps.security.audit_risk,
+          board_risk: ps.security.board_risk,
+          compensation_risk: ps.security.compensation_risk,
+          shareholder_rights_risk: ps.security.shareholder_rights_risk,
+          overall_risk: ps.security.overall_risk,
+          governance_epoch_date: ps.security.governance_epoch_date,
+          compensation_as_of_epoch_date: ps.security.compensation_as_of_epoch_date,
+          ir_website: ps.security.ir_website,
+          price: ps.security.price,
+          prev_close: ps.security.prev_close,
+          open: ps.security.open,
+          volume: ps.security.volume,
+          market_cap: ps.security.market_cap,
+          pe: ps.security.pe,
+          eps: ps.security.eps,
+          dividend: ps.security.dividend,
+          yield: ps.security.yield,
+          dividend_growth_5yr: ps.security.dividend_growth_5yr,
+          payout_ratio: ps.security.payout_ratio,
+          sma200: ps.security.sma200 as 'above' | 'below',
+          tags: ps.security.tags,
+          day_low: ps.security.day_low,
+          day_high: ps.security.day_high,
+          fifty_two_week_low: ps.security.fifty_two_week_low,
+          fifty_two_week_high: ps.security.fifty_two_week_high,
+          average_volume: ps.security.average_volume,
+          forward_pe: ps.security.forward_pe,
+          price_to_sales_trailing_12_months: ps.security.price_to_sales_trailing_12_months,
+          beta: ps.security.beta,
+          fifty_day_average: ps.security.fifty_day_average,
+          two_hundred_day_average: ps.security.two_hundred_day_average,
+          ex_dividend_date: ps.security.ex_dividend_date,
+          operating_cash_flow: ps.security.operating_cash_flow || 0,
+          free_cash_flow: ps.security.free_cash_flow || 0,
+          cash_flow_growth: ps.security.cash_flow_growth || 0,
+          target_low_price: ps.security.target_low_price,
+          target_high_price: ps.security.target_high_price,
+          recommendation_key: ps.security.recommendation_key,
+          number_of_analyst_opinions: ps.security.number_of_analyst_opinions,
+          total_cash: ps.security.total_cash,
+          total_debt: ps.security.total_debt,
+          current_ratio: ps.security.current_ratio,
+          quick_ratio: ps.security.quick_ratio,
+          debt_to_equity: ps.security.debt_to_equity,
+          revenue_per_share: ps.security.revenue_per_share,
+          return_on_assets: ps.security.return_on_assets,
+          return_on_equity: ps.security.return_on_equity,
+          gross_profits: ps.security.gross_profits,
+          earnings_growth: ps.security.earnings_growth,
+          revenue_growth: ps.security.revenue_growth,
+          gross_margins: ps.security.gross_margins,
+          ebitda_margins: ps.security.ebitda_margins,
+          operating_margins: ps.security.operating_margins,
+          profit_margins: ps.security.profit_margins,
+          total_assets: ps.security.total_assets,
+          total_current_assets: ps.security.total_current_assets,
+          total_liabilities: ps.security.total_liabilities,
+          total_current_liabilities: ps.security.total_current_liabilities,
+          total_stockholder_equity: ps.security.total_stockholder_equity,
+          cash: ps.security.cash,
+          short_term_investments: ps.security.short_term_investments,
+          net_receivables: ps.security.net_receivables,
+          inventory: ps.security.inventory,
+          other_current_assets: ps.security.other_current_assets,
+          long_term_investments: ps.security.long_term_investments,
+          property_plant_equipment: ps.security.property_plant_equipment,
+          other_assets: ps.security.other_assets,
+          intangible_assets: ps.security.intangible_assets,
+          goodwill: ps.security.goodwill,
+          accounts_payable: ps.security.accounts_payable,
+          short_long_term_debt: ps.security.short_long_term_debt,
+          other_current_liabilities: ps.security.other_current_liabilities,
+          long_term_debt: ps.security.long_term_debt,
+          other_liabilities: ps.security.other_liabilities,
+          minority_interest: ps.security.minority_interest,
+          treasury_stock: ps.security.treasury_stock,
+          retained_earnings: ps.security.retained_earnings,
+          common_stock: ps.security.common_stock,
+          capital_surplus: ps.security.capital_surplus,
+          last_fetched: ps.security.last_fetched,
+          earnings: ps.security.earnings,
+        }
+      }));
+
+      // If no securities need price updating, return the fresh portfolio data
       if (securitiesNeedingUpdate.length === 0) {
-        console.log('All securities are up to date, returning cached data');
-        return (portfolioSecurities as unknown as SupabasePortfolioSecurity[]).map(ps => ({
-          id: ps.id,
-          shares: ps.shares,
-          average_cost: ps.average_cost,
-          security: {
-            id: ps.security.id,
-            ticker: ps.security.ticker,
-            name: ps.security.name,
-            sector: ps.security.sector,
-            industry: ps.security.industry,
-            address1: ps.security.address1,
-            city: ps.security.city,
-            state: ps.security.state,
-            zip: ps.security.zip,
-            country: ps.security.country,
-            phone: ps.security.phone,
-            website: ps.security.website,
-            industry_key: ps.security.industry_key,
-            industry_disp: ps.security.industry_disp,
-            sector_key: ps.security.sector_key,
-            sector_disp: ps.security.sector_disp,
-            long_business_summary: ps.security.long_business_summary,
-            full_time_employees: ps.security.full_time_employees,
-            audit_risk: ps.security.audit_risk,
-            board_risk: ps.security.board_risk,
-            compensation_risk: ps.security.compensation_risk,
-            shareholder_rights_risk: ps.security.shareholder_rights_risk,
-            overall_risk: ps.security.overall_risk,
-            governance_epoch_date: ps.security.governance_epoch_date,
-            compensation_as_of_epoch_date: ps.security.compensation_as_of_epoch_date,
-            ir_website: ps.security.ir_website,
-            price: ps.security.price,
-            prev_close: ps.security.prev_close,
-            open: ps.security.open,
-            volume: ps.security.volume,
-            market_cap: ps.security.market_cap,
-            pe: ps.security.pe,
-            eps: ps.security.eps,
-            dividend: ps.security.dividend,
-            yield: ps.security.yield,
-            dividend_growth_5yr: ps.security.dividend_growth_5yr,
-            payout_ratio: ps.security.payout_ratio,
-            sma200: ps.security.sma200 as 'above' | 'below',
-            tags: ps.security.tags,
-            day_low: ps.security.day_low,
-            day_high: ps.security.day_high,
-            fifty_two_week_low: ps.security.fifty_two_week_low,
-            fifty_two_week_high: ps.security.fifty_two_week_high,
-            average_volume: ps.security.average_volume,
-            forward_pe: ps.security.forward_pe,
-            price_to_sales_trailing_12_months: ps.security.price_to_sales_trailing_12_months,
-            beta: ps.security.beta,
-            fifty_day_average: ps.security.fifty_day_average,
-            two_hundred_day_average: ps.security.two_hundred_day_average,
-            ex_dividend_date: ps.security.ex_dividend_date,
-            operating_cash_flow: ps.security.operating_cash_flow || 0,
-            free_cash_flow: ps.security.free_cash_flow || 0,
-            cash_flow_growth: ps.security.cash_flow_growth || 0,
-            target_low_price: ps.security.target_low_price,
-            target_high_price: ps.security.target_high_price,
-            recommendation_key: ps.security.recommendation_key,
-            number_of_analyst_opinions: ps.security.number_of_analyst_opinions,
-            total_cash: ps.security.total_cash,
-            total_debt: ps.security.total_debt,
-            current_ratio: ps.security.current_ratio,
-            quick_ratio: ps.security.quick_ratio,
-            debt_to_equity: ps.security.debt_to_equity,
-            revenue_per_share: ps.security.revenue_per_share,
-            return_on_assets: ps.security.return_on_assets,
-            return_on_equity: ps.security.return_on_equity,
-            gross_profits: ps.security.gross_profits,
-            earnings_growth: ps.security.earnings_growth,
-            revenue_growth: ps.security.revenue_growth,
-            gross_margins: ps.security.gross_margins,
-            ebitda_margins: ps.security.ebitda_margins,
-            operating_margins: ps.security.operating_margins,
-            profit_margins: ps.security.profit_margins,
-            total_assets: ps.security.total_assets,
-            total_current_assets: ps.security.total_current_assets,
-            total_liabilities: ps.security.total_liabilities,
-            total_current_liabilities: ps.security.total_current_liabilities,
-            total_stockholder_equity: ps.security.total_stockholder_equity,
-            cash: ps.security.cash,
-            short_term_investments: ps.security.short_term_investments,
-            net_receivables: ps.security.net_receivables,
-            inventory: ps.security.inventory,
-            other_current_assets: ps.security.other_current_assets,
-            long_term_investments: ps.security.long_term_investments,
-            property_plant_equipment: ps.security.property_plant_equipment,
-            other_assets: ps.security.other_assets,
-            intangible_assets: ps.security.intangible_assets,
-            goodwill: ps.security.goodwill,
-            accounts_payable: ps.security.accounts_payable,
-            short_long_term_debt: ps.security.short_long_term_debt,
-            other_current_liabilities: ps.security.other_current_liabilities,
-            long_term_debt: ps.security.long_term_debt,
-            other_liabilities: ps.security.other_liabilities,
-            minority_interest: ps.security.minority_interest,
-            treasury_stock: ps.security.treasury_stock,
-            retained_earnings: ps.security.retained_earnings,
-            common_stock: ps.security.common_stock,
-            capital_surplus: ps.security.capital_surplus,
-            last_fetched: ps.security.last_fetched,
-            earnings: ps.security.earnings,
+        console.log('All securities are up to date, returning fresh portfolio data');
+        
+        // Development debugging: Check for securities with missing fundamental data
+        if (process.env.NODE_ENV === 'development') {
+          const securitiesWithIssues = freshPortfolioData.filter(ps => {
+            const security = ps.security;
+            const hasFinancialData = security.total_cash || security.total_debt || security.current_ratio;
+            const hasBalanceSheet = security.total_assets || security.cash || security.inventory;
+            const hasEarnings = security.earnings;
+            
+            return !hasFinancialData || !hasBalanceSheet || !hasEarnings;
+          });
+          
+          if (securitiesWithIssues.length > 0) {
+            console.warn('⚠️ Securities with missing fundamental data:', 
+              securitiesWithIssues.map(ps => ({
+                ticker: ps.security.ticker,
+                name: ps.security.name,
+                missing: {
+                  financialData: !(ps.security.total_cash || ps.security.total_debt || ps.security.current_ratio),
+                  balanceSheet: !(ps.security.total_assets || ps.security.cash || ps.security.inventory),
+                  earnings: !ps.security.earnings
+                },
+                lastFetched: ps.security.last_fetched
+              }))
+            );
           }
-        }));
+        }
+        
+        return freshPortfolioData;
       }
 
       // Get tickers that need updating
       const tickersToUpdate = Array.from(new Set(securitiesNeedingUpdate.map(ps => ps.security.ticker)));
       console.log(`Updating ${tickersToUpdate.length} securities: ${tickersToUpdate.join(', ')}`);
 
-      // Get the current session
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.error('No active session found');
-        throw new Error('Authentication required: No active session');
-      }
-
       // Fetch data for securities that need updating
-      const response = await fetch('/api/securities/batch', {
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const response = await fetch(`${baseUrl}/api/securities/batch`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${authToken}`
         },
         body: JSON.stringify({ tickers: tickersToUpdate })
       });
@@ -609,6 +694,20 @@ export const portfolioDataService = {
       if (!results || results.length === 0) {
         console.warn('No results returned from securities batch API');
         return [];
+      }
+
+      // Development debugging: Log data availability for each security
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📊 Batch update results:', results.map(result => ({
+          ticker: result.ticker,
+          dataAvailable: {
+            price: !!result.data.price?.regularMarketPrice,
+            financialData: !!result.data.financialData,
+            balanceSheet: !!result.data.balanceSheetHistory?.balanceSheetStatements?.[0],
+            cashflow: !!result.data.cashflowStatementHistory?.cashflowStatements?.[0],
+            earnings: !!result.data.earnings
+          }
+        })));
       }
 
       // Create a map of ticker to quote summary for easy lookup
@@ -632,7 +731,7 @@ export const portfolioDataService = {
           } = quoteSummary;
 
           // Update the security in the database
-          const { data: updatedSecurity, error: updateError } = await supabase
+          const { data: updatedSecurity, error: updateError } = await client
             .from('securities')
             .update({
               name: priceData?.longName || priceData?.shortName || ps.security.ticker,
@@ -735,6 +834,16 @@ export const portfolioDataService = {
           if (updateError) {
             console.error(`Error updating security ${ps.security.ticker}:`, updateError);
             return ps;
+          }
+
+          // Development debugging: Log successful updates
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`✅ Updated ${ps.security.ticker}:`, {
+              hasFinancialData: !!(updatedSecurity.total_cash || updatedSecurity.total_debt || updatedSecurity.current_ratio),
+              hasBalanceSheet: !!(updatedSecurity.total_assets || updatedSecurity.cash || updatedSecurity.inventory),
+              hasEarnings: !!updatedSecurity.earnings,
+              lastFetched: updatedSecurity.last_fetched
+            });
           }
 
           // Return the updated security data
@@ -847,7 +956,16 @@ export const portfolioDataService = {
         })
       );
 
-      return updatedSecurities;
+      // Return the updated portfolio data
+      const finalPortfolioData = freshPortfolioData.map(ps => {
+        const updatedSecurity = updatedSecurities.find(updated => updated.id === ps.id);
+        return updatedSecurity || ps;
+      });
+
+      // Development: Analyze data quality
+      this.analyzePortfolioDataQuality(finalPortfolioData);
+
+      return finalPortfolioData;
     } catch (error) {
       console.error('Error updating portfolio securities:', error);
       throw error;

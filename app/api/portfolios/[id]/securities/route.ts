@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { securityService } from '@/services/securityDataService';
+import { securityService } from '@/src/services/securityDataService';
+import { portfolioDataService } from '@/src/services/portfolioDataService';
 
 export async function GET(
   request: NextRequest,
@@ -70,33 +71,17 @@ export async function GET(
       );
     }
 
-    // Fetch portfolio securities with security details
-    const { data: securities, error: securitiesError } = await supabase
-      .from('portfolio_securities')
-      .select(`
-        *,
-        security:securities(*)
-      `)
-      .eq('portfolio_id', id);
-
-    if (securitiesError) {
-      console.error('Error fetching securities:', securitiesError);
-      return NextResponse.json(
-        { error: 'Failed to fetch securities' },
-        { status: 500 }
-      );
-    }
+    // Use the centralized TTL-based mechanism to fetch securities with automatic fundamentals refresh
+    const portfolioSecurities = await portfolioDataService.updatePortfolioSecurities(id, supabase, token);
 
     // Transform the data to ensure numeric values
-    const transformedSecurities = securities.map((security: any) => ({
-      ...security,
-      shares: Number(security.shares),
-      average_cost: Number(security.average_cost),
-      security: {
-        ...security.security,
-        price: Number(security.security.price),
-        yield: Number(security.security.yield)
-      }
+    const transformedSecurities = portfolioSecurities.map((ps) => ({
+      id: ps.id,
+      portfolio_id: id,
+      security_id: ps.security.id,
+      shares: Number(ps.shares),
+      average_cost: Number(ps.average_cost),
+      security: ps.security
     }));
 
     return NextResponse.json(transformedSecurities);
@@ -206,22 +191,106 @@ export async function POST(
     // If security doesn't exist, create it
     if (securityError) {
       console.log('POST /api/portfolios/[id]/securities - Creating new security');
-      // Get real-time security data
+      // Get real-time security data with full fundamentals
       const securityData = await securityService.getSecurityData(ticker);
       console.log('POST /api/portfolios/[id]/securities - Got security data:', securityData);
 
-      // Create a new security with real-time data
+      if (!securityData) {
+        console.error('POST /api/portfolios/[id]/securities - Failed to get security data');
+        return NextResponse.json(
+          { error: 'Failed to fetch security data' },
+          { status: 500 }
+        );
+      }
+
+      // Create a new security with complete fundamental data
       const { data: newSecurity, error: createSecurityError } = await supabase
         .from('securities')
         .insert([
           {
             ticker: ticker,
-            name: securityData?.name || ticker,
-            sector: securityData?.sector || 'Unknown',
-            price: securityData?.price || average_cost,
-            yield: securityData?.yield || 0,
-            sma200: securityData?.sma200 || 'below',
-            tags: securityData?.tags || [],
+            name: securityData.name,
+            sector: securityData.sector,
+            industry: securityData.industry,
+            address1: securityData.address1,
+            city: securityData.city,
+            state: securityData.state,
+            zip: securityData.zip,
+            country: securityData.country,
+            phone: securityData.phone,
+            website: securityData.website,
+            industry_key: securityData.industry_key,
+            industry_disp: securityData.industry_disp,
+            sector_key: securityData.sector_key,
+            sector_disp: securityData.sector_disp,
+            long_business_summary: securityData.long_business_summary,
+            full_time_employees: securityData.full_time_employees,
+            audit_risk: securityData.audit_risk,
+            board_risk: securityData.board_risk,
+            compensation_risk: securityData.compensation_risk,
+            shareholder_rights_risk: securityData.shareholder_rights_risk,
+            overall_risk: securityData.overall_risk,
+            governance_epoch_date: securityData.governance_epoch_date,
+            compensation_as_of_epoch_date: securityData.compensation_as_of_epoch_date,
+            ir_website: securityData.ir_website,
+            price: securityData.price,
+            prev_close: securityData.prev_close,
+            open: securityData.open,
+            volume: securityData.volume,
+            market_cap: securityData.market_cap,
+            pe: securityData.pe,
+            eps: securityData.eps,
+            dividend: securityData.dividend,
+            yield: securityData.yield,
+            dividend_growth_5yr: securityData.dividend_growth_5yr,
+            payout_ratio: securityData.payout_ratio,
+            sma200: securityData.sma200,
+            tags: securityData.tags,
+            ex_dividend_date: securityData.ex_dividend_date,
+            operating_cash_flow: securityData.operating_cash_flow,
+            free_cash_flow: securityData.free_cash_flow,
+            cash_flow_growth: securityData.cash_flow_growth,
+            target_low_price: securityData.target_low_price,
+            target_high_price: securityData.target_high_price,
+            recommendation_key: securityData.recommendation_key,
+            number_of_analyst_opinions: securityData.number_of_analyst_opinions,
+            total_cash: securityData.total_cash,
+            total_debt: securityData.total_debt,
+            current_ratio: securityData.current_ratio,
+            quick_ratio: securityData.quick_ratio,
+            debt_to_equity: securityData.debt_to_equity,
+            return_on_equity: securityData.return_on_equity,
+            earnings_growth: securityData.earnings_growth,
+            revenue_growth: securityData.revenue_growth,
+            operating_margins: securityData.operating_margins,
+            profit_margins: securityData.profit_margins,
+            total_assets: securityData.total_assets,
+            total_current_assets: securityData.total_current_assets,
+            total_liabilities: securityData.total_liabilities,
+            total_current_liabilities: securityData.total_current_liabilities,
+            total_stockholder_equity: securityData.total_stockholder_equity,
+            cash: securityData.cash,
+            short_term_investments: securityData.short_term_investments,
+            net_receivables: securityData.net_receivables,
+            inventory: securityData.inventory,
+            other_current_assets: securityData.other_current_assets,
+            long_term_investments: securityData.long_term_investments,
+            property_plant_equipment: securityData.property_plant_equipment,
+            other_assets: securityData.other_assets,
+            intangible_assets: securityData.intangible_assets,
+            goodwill: securityData.goodwill,
+            accounts_payable: securityData.accounts_payable,
+            short_long_term_debt: securityData.short_long_term_debt,
+            other_current_liabilities: securityData.other_current_liabilities,
+            long_term_debt: securityData.long_term_debt,
+            other_liabilities: securityData.other_liabilities,
+            minority_interest: securityData.minority_interest,
+            treasury_stock: securityData.treasury_stock,
+            retained_earnings: securityData.retained_earnings,
+            common_stock: securityData.common_stock,
+            capital_surplus: securityData.capital_surplus,
+            earnings: securityData.earnings,
+            last_fetched: securityData.last_fetched,
           }
         ])
         .select()

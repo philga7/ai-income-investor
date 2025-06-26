@@ -34,7 +34,7 @@ describe('AddSecurityDialog', () => {
     );
     expect(screen.getByText('Add Security')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Add Security'));
-    expect(screen.getByText('Search for a security to add to your portfolio')).toBeInTheDocument();
+    expect(screen.getByText('Search for a security and add purchase lots to your portfolio')).toBeInTheDocument();
   });
 
   it('shows loading and displays search results', async () => {
