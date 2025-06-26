@@ -62,12 +62,12 @@ export const performanceMetricsService = {
     let totalValue = 0;
 
     // Calculate total portfolio value
-    portfolio.securities.forEach(security => {
+    (portfolio.securities || []).forEach(security => {
       totalValue += security.shares * security.security.price;
     });
 
     // Calculate sector allocations
-    portfolio.securities.forEach(security => {
+    (portfolio.securities || []).forEach(security => {
       const sector = security.security.sector;
       const value = security.shares * security.security.price;
       const percentage = (value / totalValue) * 100;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,9 +21,10 @@ import { SearchResult } from '@/lib/financial/api/yahoo/types';
 interface AddSecurityDialogProps {
   portfolioId: string;
   onSecurityAdded?: () => void;
+  existingTickers?: string[];
 }
 
-export function AddSecurityDialog({ portfolioId, onSecurityAdded }: AddSecurityDialogProps) {
+export function AddSecurityDialog({ portfolioId, onSecurityAdded, existingTickers = [] }: AddSecurityDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -33,6 +34,16 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded }: AddSecurityD
     shares: '',
     averageCost: '',
   });
+
+  // Ref for Number of Shares input
+  const sharesInputRef = useRef<HTMLInputElement>(null);
+
+  // Focus Number of Shares input when a security is selected
+  useEffect(() => {
+    if (selectedSecurity && sharesInputRef.current) {
+      sharesInputRef.current.focus();
+    }
+  }, [selectedSecurity]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -114,15 +125,15 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded }: AddSecurityD
       <DialogTrigger asChild>
         <Button>Add Security</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>Add Security</DialogTitle>
           <DialogDescription>
             Search for a security to add to your portfolio
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto space-y-4 min-h-0">
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -141,39 +152,46 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded }: AddSecurityD
           </div>
 
           {searchResults.length > 0 && (
-            <div className="border rounded-md max-h-[400px] overflow-y-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Symbol</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Exchange</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {searchResults.map((security) => (
-                    <TableRow key={security.symbol}>
-                      <TableCell className="font-medium">{security.symbol}</TableCell>
-                      <TableCell>{security.shortname || security.longname}</TableCell>
-                      <TableCell>{security.exchange}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{security.quoteType}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedSecurity(security)}
-                        >
-                          Select
-                        </Button>
-                      </TableCell>
+            <div className="border rounded-md overflow-x-auto overflow-y-hidden">
+              <div className="max-h-[300px] overflow-y-auto min-w-[600px]">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background z-10">
+                    <TableRow>
+                      <TableHead className="w-28">Symbol</TableHead>
+                      <TableHead className="w-56">Name</TableHead>
+                      <TableHead className="w-24">Exchange</TableHead>
+                      <TableHead className="w-20">Type</TableHead>
+                      <TableHead className="w-20 text-right"></TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {searchResults.map((security) => {
+                      const alreadyAdded = existingTickers.includes(security.symbol);
+                      return (
+                        <TableRow key={security.symbol}>
+                          <TableCell className="font-medium">{security.symbol}</TableCell>
+                          <TableCell>{security.shortname || security.longname}</TableCell>
+                          <TableCell>{security.exchange}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">{security.quoteType}</Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedSecurity(security)}
+                              disabled={alreadyAdded}
+                              title={alreadyAdded ? 'Already in portfolio' : ''}
+                            >
+                              {alreadyAdded ? 'Added' : 'Select'}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           )}
 
@@ -191,6 +209,7 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded }: AddSecurityD
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Number of Shares</label>
                   <Input
+                    ref={sharesInputRef}
                     type="number"
                     min="1"
                     placeholder="e.g., 100"
@@ -214,7 +233,7 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded }: AddSecurityD
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 border-t pt-4">
           <Button
             variant="outline"
             onClick={() => setIsOpen(false)}

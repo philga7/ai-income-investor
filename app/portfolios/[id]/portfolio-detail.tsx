@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { useAuth } from '@/lib/auth';
 import { portfolioAnalyticsService } from "@/src/services/portfolioAnalyticsService";
@@ -25,6 +25,10 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
   const [loading, setLoading] = useState(!initialPortfolio);
   const { session } = useAuth();
   const analytics = portfolio ? portfolioAnalyticsService.calculatePortfolioAnalytics(portfolio) : null;
+  
+  // Use refs to track if we've already fetched data to prevent unnecessary re-fetches
+  const hasInitialized = useRef(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchPortfolio = useCallback(async () => {
     if (!session?.access_token) {
@@ -71,17 +75,40 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
     }
   }, [portfolioId, session]);
 
+  // Initial data loading - only run once
   useEffect(() => {
+    if (hasInitialized.current) return;
+    
     if (!initialPortfolio) {
       fetchPortfolio();
     }
     fetchSecurities();
-
-    // Set up an interval to refresh securities data every 5 minutes
-    const refreshInterval = setInterval(fetchSecurities, 5 * 60 * 1000);
-
-    return () => clearInterval(refreshInterval);
+    hasInitialized.current = true;
   }, [initialPortfolio, fetchPortfolio, fetchSecurities]);
+
+  // Set up refresh interval only when portfolio is loaded and tab is visible
+  useEffect(() => {
+    if (!portfolio || !hasInitialized.current) return;
+
+    // Clear any existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+
+    // Set up new interval that only runs when tab is visible
+    intervalRef.current = setInterval(() => {
+      if (!document.hidden) {
+        fetchSecurities();
+      }
+    }, 5 * 60 * 1000);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [portfolio, fetchSecurities]);
 
   const handlePortfolioUpdated = () => {
     // Fetch the updated portfolio data but preserve existing securities
@@ -118,6 +145,10 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
     fetchSecurities();
   }, [fetchSecurities]);
 
+  const handleSecurityAdded = useCallback(() => {
+    fetchSecurities();
+  }, [fetchSecurities]);
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -136,9 +167,10 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
       
       {/* Ticker Listing and Add Security - moved to top */}
       <PortfolioSecurities
-        securities={portfolio.securities}
+        securities={portfolio.securities || []}
         portfolioId={portfolio.id}
         onSecurityDeleted={handleSecurityDeleted}
+        onSecurityAdded={handleSecurityAdded}
       />
       
       {/* Portfolio Performance - moved up */}
