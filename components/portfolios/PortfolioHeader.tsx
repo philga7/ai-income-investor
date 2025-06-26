@@ -31,7 +31,7 @@ export function PortfolioHeader({ portfolio, onPortfolioUpdated }: PortfolioHead
         <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div>
             <p className="text-sm font-medium text-muted-foreground">Securities</p>
-            <p className="text-2xl font-bold">{portfolio.securities.length}</p>
+            <p className="text-2xl font-bold">{portfolio.securities?.length || 0}</p>
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground">Total Value</p>
