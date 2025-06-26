@@ -28,13 +28,16 @@ export function PortfolioSecurities({ securities, portfolioId, onSecurityDeleted
   const [selectedSecurity, setSelectedSecurity] = useState<PortfolioSecurity | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Ensure securities is always an array to prevent mapping errors
+  const safeSecurities = securities || [];
+
   const analytics = portfolioAnalyticsService.calculatePortfolioAnalytics({
     id: portfolioId,
     name: '',
     description: '',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    securities
+    securities: safeSecurities
   });
 
   const handleRowClick = (security: PortfolioSecurity) => {
@@ -50,7 +53,11 @@ export function PortfolioSecurities({ securities, portfolioId, onSecurityDeleted
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <AddSecurityDialog portfolioId={portfolioId} onSecurityAdded={onSecurityAdded} />
+        <AddSecurityDialog 
+          portfolioId={portfolioId} 
+          onSecurityAdded={onSecurityAdded}
+          existingTickers={safeSecurities.map(s => s.security.ticker)}
+        />
       </div>
 
       <div className="rounded-md border">
@@ -73,58 +80,66 @@ export function PortfolioSecurities({ securities, portfolioId, onSecurityDeleted
             </TableRow>
           </TableHeader>
           <TableBody>
-            {securities.map((ps) => {
-              const marketValue = ps.shares * ps.security.price;
-              const costBasis = ps.shares * ps.average_cost;
-              const gainLoss = marketValue - costBasis;
-              const gainLossPercentage = (gainLoss / costBasis) * 100;
-              const securityDividend = analytics.dividendMetrics.securityDividends[ps.security.id];
-              const securityValue = analytics.valueMetrics.securityValues[ps.security.id];
+            {safeSecurities.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={13} className="text-center text-muted-foreground py-8">
+                  No securities added to this portfolio yet. Click &quot;Add Security&quot; to get started.
+                </TableCell>
+              </TableRow>
+            ) : (
+              safeSecurities.map((ps) => {
+                const marketValue = ps.shares * ps.security.price;
+                const costBasis = ps.shares * ps.average_cost;
+                const gainLoss = marketValue - costBasis;
+                const gainLossPercentage = (gainLoss / costBasis) * 100;
+                const securityDividend = analytics.dividendMetrics.securityDividends[ps.security.id];
+                const securityValue = analytics.valueMetrics.securityValues[ps.security.id];
 
-              return (
-                <TableRow 
-                  key={ps.id} 
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleRowClick(ps)}
-                >
-                  <TableCell className="font-medium">{ps.security.ticker}</TableCell>
-                  <TableCell>{ps.security.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{ps.security.sector}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">{ps.shares.toLocaleString()}</TableCell>
-                  <TableCell className="text-right">${ps.average_cost.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">${ps.security.price.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">${marketValue.toLocaleString()}</TableCell>
-                  <TableCell className={`text-right ${securityValue.dayChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    ${securityValue.dayChange.toFixed(2)} ({securityValue.dayChangePercentage.toFixed(2)}%)
-                  </TableCell>
-                  <TableCell className={`text-right ${gainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    ${gainLoss.toLocaleString()} ({gainLossPercentage.toFixed(2)}%)
-                  </TableCell>
-                  <TableCell className="text-right">{securityValue.peRatio.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">{ps.security.yield.toFixed(2)}%</TableCell>
-                  <TableCell className="text-right">
-                    {portfolioAnalyticsService.formatCurrency(securityDividend.annualDividend)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                      <Link href={`/portfolios/${portfolioId}/securities/${ps.id}/edit`}>
-                        <Button variant="ghost" size="icon">
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </Link>
-                      <DeleteSecurityDialog
-                        portfolioId={portfolioId}
-                        securityId={ps.id}
-                        securityName={ps.security.name}
-                        onDelete={onSecurityDeleted}
-                      />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+                return (
+                  <TableRow 
+                    key={ps.id} 
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => handleRowClick(ps)}
+                  >
+                    <TableCell className="font-medium">{ps.security.ticker}</TableCell>
+                    <TableCell>{ps.security.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{ps.security.sector}</Badge>
+                    </TableCell>
+                    <TableCell className="text-right">{ps.shares.toLocaleString()}</TableCell>
+                    <TableCell className="text-right">${ps.average_cost.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">${ps.security.price.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">${marketValue.toLocaleString()}</TableCell>
+                    <TableCell className={`text-right ${securityValue.dayChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ${securityValue.dayChange.toFixed(2)} ({securityValue.dayChangePercentage.toFixed(2)}%)
+                    </TableCell>
+                    <TableCell className={`text-right ${gainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ${gainLoss.toLocaleString()} ({gainLossPercentage.toFixed(2)}%)
+                    </TableCell>
+                    <TableCell className="text-right">{securityValue.peRatio.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">{ps.security.yield.toFixed(2)}%</TableCell>
+                    <TableCell className="text-right">
+                      {portfolioAnalyticsService.formatCurrency(securityDividend.annualDividend)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                        <Link href={`/portfolios/${portfolioId}/securities/${ps.id}/edit`}>
+                          <Button variant="ghost" size="icon">
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <DeleteSecurityDialog
+                          portfolioId={portfolioId}
+                          securityId={ps.id}
+                          securityName={ps.security.name}
+                          onDelete={onSecurityDeleted}
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
       </div>
