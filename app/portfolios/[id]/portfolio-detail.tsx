@@ -84,7 +84,34 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
   }, [initialPortfolio, fetchPortfolio, fetchSecurities]);
 
   const handlePortfolioUpdated = () => {
-    fetchPortfolio();
+    // Fetch the updated portfolio data but preserve existing securities
+    if (!session?.access_token) {
+      toast.error('You must be logged in to view portfolios');
+      return;
+    }
+
+    fetch(`/api/portfolios/${portfolioId}`, {
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Failed to fetch updated portfolio');
+      }
+      return response.json();
+    })
+    .then(updatedPortfolio => {
+      // Preserve the existing securities data when updating the portfolio
+      setPortfolio(prev => prev ? {
+        ...updatedPortfolio,
+        securities: prev.securities || []
+      } : updatedPortfolio);
+    })
+    .catch(error => {
+      console.error('Error fetching updated portfolio:', error);
+      toast.error('Failed to fetch updated portfolio');
+    });
   };
 
   const handleSecurityDeleted = useCallback(() => {
