@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { portfolioRebalancingService } from '@/src/services/portfolioRebalancingService';
+import { portfolioDataService } from '@/src/services/portfolioDataService';
 import type { Portfolio, PortfolioSecurity } from '@/src/services/portfolioService';
 
 export async function GET(
@@ -48,29 +49,10 @@ export async function GET(
       );
     }
 
-    // Get the portfolio with securities using the authenticated client
+    // Get basic portfolio info
     const { data: portfolio, error: portfolioError } = await supabase
       .from('portfolios')
-      .select(`
-        *,
-        portfolio_securities (
-          id,
-          shares,
-          average_cost,
-          security:securities (
-            id,
-            ticker,
-            name,
-            sector,
-            industry,
-            price,
-            market_cap,
-            yield,
-            sma200,
-            tags
-          )
-        )
-      `)
+      .select('*')
       .eq('id', id)
       .eq('user_id', user.id)
       .single();
@@ -83,6 +65,9 @@ export async function GET(
       );
     }
 
+    // Use the centralized TTL-based mechanism to fetch securities with automatic fundamentals refresh
+    const portfolioSecurities = await portfolioDataService.updatePortfolioSecurities(id, supabase, token);
+
     // Transform the portfolio data to match the expected interface
     const transformedPortfolio: Portfolio = {
       id: portfolio.id,
@@ -90,45 +75,11 @@ export async function GET(
       description: portfolio.description,
       created_at: portfolio.created_at,
       updated_at: portfolio.updated_at,
-      securities: portfolio.portfolio_securities.map((ps: any) => ({
+      securities: portfolioSecurities.map((ps) => ({
         id: ps.id,
-        shares: Number(ps.shares),
-        average_cost: Number(ps.average_cost),
-        security: {
-          id: ps.security.id,
-          ticker: ps.security.ticker,
-          name: ps.security.name,
-          sector: ps.security.sector,
-          industry: ps.security.industry,
-          price: Number(ps.security.price),
-          market_cap: Number(ps.security.market_cap || 0),
-          yield: Number(ps.security.yield || 0),
-          sma200: ps.security.sma200,
-          tags: ps.security.tags || [],
-          // Add other required fields with defaults
-          prev_close: 0,
-          open: 0,
-          volume: 0,
-          pe: 0,
-          eps: 0,
-          dividend: 0,
-          dividend_growth_5yr: 0,
-          payout_ratio: 0,
-          day_low: 0,
-          day_high: 0,
-          fifty_two_week_low: 0,
-          fifty_two_week_high: 0,
-          average_volume: 0,
-          forward_pe: 0,
-          price_to_sales_trailing_12_months: 0,
-          beta: 0,
-          fifty_day_average: 0,
-          two_hundred_day_average: 0,
-          ex_dividend_date: '',
-          operating_cash_flow: 0,
-          free_cash_flow: 0,
-          cash_flow_growth: 0
-        }
+        shares: ps.shares,
+        average_cost: ps.average_cost,
+        security: ps.security
       }))
     };
 

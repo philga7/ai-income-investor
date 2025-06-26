@@ -11,6 +11,7 @@ import { PortfolioHeader } from "@/components/portfolios/PortfolioHeader";
 import { PortfolioRebalancing } from "@/components/portfolios/PortfolioRebalancing";
 import { EnhancedAIAnalysis } from "@/components/portfolios/EnhancedAIAnalysis";
 import { DividendTimingDashboard } from "@/components/portfolios/DividendTimingDashboard";
+import { PortfolioDataQualityDebug } from "@/components/portfolios/PortfolioDataQualityDebug";
 import { BreadcrumbNav } from '@/components/ui/breadcrumb';
 import { Portfolio, PortfolioSecurity } from "@/services/portfolioService";
 
@@ -21,11 +22,11 @@ interface PortfolioDetailProps {
 
 export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDetailProps) {
   const [portfolio, setPortfolio] = useState<Portfolio | null>(initialPortfolio || null);
-  const [securities, setSecurities] = useState<PortfolioSecurity[]>([]);
   const [loading, setLoading] = useState(!initialPortfolio);
-  const { session } = useAuth();
-  const analytics = portfolio ? portfolioAnalyticsService.calculatePortfolioAnalytics(portfolio) : null;
+  const { session, loading: authLoading } = useAuth();
   
+  const analytics = portfolio ? portfolioAnalyticsService.calculatePortfolioAnalytics(portfolio) : null;
+
   // Use refs to track if we've already fetched data to prevent unnecessary re-fetches
   const hasInitialized = useRef(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -59,32 +60,15 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
     }
   }, [portfolioId, session]);
 
-  const fetchSecurities = useCallback(async () => {
-    if (!session?.access_token) {
-      return;
-    }
-
-    try {
-      // Use the new portfolioDataService to fetch and update securities
-      const updatedSecurities = await portfolioDataService.updatePortfolioSecurities(portfolioId);
-      setSecurities(updatedSecurities);
-      setPortfolio(prev => prev ? { ...prev, securities: updatedSecurities } : null);
-    } catch (error) {
-      console.error('Error fetching securities:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to fetch securities');
-    }
-  }, [portfolioId, session]);
-
   // Initial data loading - only run once
   useEffect(() => {
     if (hasInitialized.current) return;
     
-    if (!initialPortfolio) {
+    if (!initialPortfolio && !authLoading && session) {
       fetchPortfolio();
+      hasInitialized.current = true;
     }
-    fetchSecurities();
-    hasInitialized.current = true;
-  }, [initialPortfolio, fetchPortfolio, fetchSecurities]);
+  }, [initialPortfolio, fetchPortfolio, session, authLoading]);
 
   // Set up refresh interval only when portfolio is loaded and tab is visible
   useEffect(() => {
@@ -98,7 +82,7 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
     // Set up new interval that only runs when tab is visible
     intervalRef.current = setInterval(() => {
       if (!document.hidden) {
-        fetchSecurities();
+        fetchPortfolio();
       }
     }, 5 * 60 * 1000);
 
@@ -108,49 +92,26 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
         intervalRef.current = null;
       }
     };
-  }, [portfolio, fetchSecurities]);
+  }, [portfolio, fetchPortfolio]);
 
   const handlePortfolioUpdated = () => {
-    // Fetch the updated portfolio data but preserve existing securities
-    if (!session?.access_token) {
-      toast.error('You must be logged in to view portfolios');
-      return;
-    }
-
-    fetch(`/api/portfolios/${portfolioId}`, {
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-      },
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Failed to fetch updated portfolio');
-      }
-      return response.json();
-    })
-    .then(updatedPortfolio => {
-      // Preserve the existing securities data when updating the portfolio
-      setPortfolio(prev => prev ? {
-        ...updatedPortfolio,
-        securities: prev.securities || []
-      } : updatedPortfolio);
-    })
-    .catch(error => {
-      console.error('Error fetching updated portfolio:', error);
-      toast.error('Failed to fetch updated portfolio');
-    });
+    fetchPortfolio();
   };
 
   const handleSecurityDeleted = useCallback(() => {
-    fetchSecurities();
-  }, [fetchSecurities]);
+    fetchPortfolio();
+  }, [fetchPortfolio]);
 
   const handleSecurityAdded = useCallback(() => {
-    fetchSecurities();
-  }, [fetchSecurities]);
+    fetchPortfolio();
+  }, [fetchPortfolio]);
+
+  if (authLoading) {
+    return <div>Loading authentication...</div>;
+  }
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div>Loading portfolio...</div>;
   }
 
   if (!portfolio) {
@@ -167,14 +128,16 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
       
       {/* Ticker Listing and Add Security - moved to top */}
       <PortfolioSecurities
-        securities={portfolio.securities || []}
+        securities={portfolio.securities}
         portfolioId={portfolio.id}
         onSecurityDeleted={handleSecurityDeleted}
         onSecurityAdded={handleSecurityAdded}
       />
       
       {/* Portfolio Performance - moved up */}
-      <PortfolioPerformance portfolio={portfolio} />
+      {analytics && (
+        <PortfolioPerformance portfolio={portfolio} />
+      )}
       
       {/* Enhanced AI Analysis Button */}
       <div className="flex justify-end">
@@ -182,9 +145,13 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
       </div>
       
       {/* Dividend Timing Dashboard */}
-      <DividendTimingDashboard portfolio={portfolio} />
+      {analytics && (
+        <DividendTimingDashboard portfolio={portfolio} />
+      )}
       
       <PortfolioRebalancing portfolioId={portfolio.id} />
+      
+      <PortfolioDataQualityDebug portfolioSecurities={portfolio.securities} />
     </div>
   );
-} 
+}

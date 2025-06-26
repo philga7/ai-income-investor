@@ -103,10 +103,7 @@ export default function PortfoliosPage() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {portfolios.map((portfolio) => (
               <Link 
-                href={{
-                  pathname: `/portfolios/${portfolio.id}`,
-                  query: { portfolio: JSON.stringify(portfolio) }
-                }} 
+                href={`/portfolios/${portfolio.id}`}
                 key={portfolio.id}
               >
                 <Card className="h-full transition-all hover:shadow-md">

@@ -50,7 +50,7 @@ export type Security = {
   beta: number;
   fifty_day_average: number;
   two_hundred_day_average: number;
-  ex_dividend_date: string;
+  ex_dividend_date?: string;
   operating_cash_flow: number;
   free_cash_flow: number;
   cash_flow_growth: number;
