@@ -182,19 +182,42 @@ export function DividendSecurities({
                       <TableCell>{isCash ? formatCurrency(security.shares) : formatCurrency(marketValue)}</TableCell>
                       {/* For CASH, render empty cells for all hidden columns to align the edit icon */}
                       {isCash ? (
-                        <>
-                          <TableCell /> {/* Yield */}
-                          <TableCell /> {/* Annual Income */}
-                          <TableCell /> {/* Growth Rate */}
-                          <TableCell /> {/* Reliability */}
-                        </>
+                        <TableCell />
                       ) : (
-                        <>
-                          <TableCell><div className="flex items-center gap-1"><Target className="h-3 w-3 text-muted-foreground" />{formatPercentage(security.security.yield)}</div></TableCell>
-                          <TableCell><div className="font-medium text-green-600">{formatCurrency(annualIncome)}</div></TableCell>
-                          <TableCell><div className="flex items-center gap-1">{getGrowthIcon(security.security.dividend_growth_5yr || 0)}<span>{formatPercentage(security.security.dividend_growth_5yr || 0)}</span></div></TableCell>
-                          <TableCell><Badge className={getReliabilityColor(reliability)}>{reliability.charAt(0).toUpperCase() + reliability.slice(1)}</Badge></TableCell>
-                        </>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Target className="h-3 w-3 text-muted-foreground" />
+                            {formatPercentage(security.security.yield)}
+                          </div>
+                        </TableCell>
+                      )}
+                      {isCash ? (
+                        <TableCell />
+                      ) : (
+                        <TableCell>
+                          <div className="font-medium text-green-600">
+                            {formatCurrency(annualIncome)}
+                          </div>
+                        </TableCell>
+                      )}
+                      {isCash ? (
+                        <TableCell />
+                      ) : (
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            {getGrowthIcon(security.security.dividend_growth_5yr || 0)}
+                            <span>{formatPercentage(security.security.dividend_growth_5yr || 0)}</span>
+                          </div>
+                        </TableCell>
+                      )}
+                      {isCash ? (
+                        <TableCell />
+                      ) : (
+                        <TableCell>
+                          <Badge className={getReliabilityColor(reliability)}>
+                            {reliability.charAt(0).toUpperCase() + reliability.slice(1)}
+                          </Badge>
+                        </TableCell>
                       )}
                       <TableCell>
                         <div className="flex items-center gap-1">
