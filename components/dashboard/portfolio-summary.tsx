@@ -22,6 +22,8 @@ interface PortfolioSummaryData {
   lowestYield: { ticker: string; yield: number } | null;
   cashPercentage: number;
   equitiesPercentage: number;
+  totalCash: number;
+  totalEquities: number;
 }
 
 export function PortfolioSummary() {
@@ -40,8 +42,9 @@ export function PortfolioSummary() {
           return;
         }
 
+        let totalCash = 0;
+        let totalEquities = 0;
         // Calculate aggregated data across all portfolios
-        let totalValue = 0;
         let totalCost = 0;
         let totalAnnualDividend = 0;
         let totalWeightedYield = 0;
@@ -50,16 +53,21 @@ export function PortfolioSummary() {
 
         for (const portfolio of portfolios) {
           const analytics = portfolioAnalyticsService.calculatePortfolioAnalytics(portfolio);
-          
-          totalValue += analytics.valueMetrics.totalValue;
+          // Calculate cash and equities for this portfolio
+          portfolio.securities.forEach(security => {
+            if (security.security.ticker === 'CASH') {
+              // Always use price 1.00 for cash
+              totalCash += security.shares * 1.00;
+            } else {
+              totalEquities += security.shares * security.security.price;
+            }
+          });
           totalCost += analytics.valueMetrics.totalCost;
           totalAnnualDividend += analytics.dividendMetrics.totalAnnualDividend;
-          
           // Calculate weighted yield
           const portfolioWeight = analytics.valueMetrics.totalValue;
           totalWeightedYield += analytics.dividendMetrics.portfolioYield * portfolioWeight;
           totalWeight += portfolioWeight;
-
           // Collect all securities for yield analysis
           portfolio.securities.forEach(security => {
             if (security.security.yield > 0) {
@@ -71,25 +79,23 @@ export function PortfolioSummary() {
           });
         }
 
+        // Derive totalValue as sum of cash and equities
+        const totalValue = totalCash + totalEquities;
+
         const totalGainLoss = totalValue - totalCost;
         const totalGainLossPercentage = totalCost > 0 ? (totalGainLoss / totalCost) * 100 : 0;
         const portfolioYield = totalWeight > 0 ? totalWeightedYield / totalWeight : 0;
-
         // Find highest and lowest yield securities
         const sortedSecurities = allSecurities.sort((a, b) => b.yield - a.yield);
         const highestYield = sortedSecurities.length > 0 ? sortedSecurities[0] : null;
         const lowestYield = sortedSecurities.length > 0 ? sortedSecurities[sortedSecurities.length - 1] : null;
-
         // For now, we'll use estimates for YTD and next 30 days
         // In a real implementation, you'd calculate these from actual dividend history
         const ytdReceived = totalAnnualDividend * 0.49; // Estimate: 49% of annual received
         const next30Days = totalAnnualDividend * 0.12; // Estimate: 12% of annual in next 30 days
-
-        // For cash vs equities, we'll assume 10% cash for now
-        // In a real implementation, you'd track cash positions in portfolios
-        const cashPercentage = 10;
-        const equitiesPercentage = 90;
-
+        // Use real cash and equities values
+        const cashPercentage = totalValue > 0 ? (totalCash / totalValue) * 100 : 0;
+        const equitiesPercentage = totalValue > 0 ? (totalEquities / totalValue) * 100 : 0;
         setSummaryData({
           totalValue,
           totalCost,
@@ -102,7 +108,9 @@ export function PortfolioSummary() {
           highestYield,
           lowestYield,
           cashPercentage,
-          equitiesPercentage
+          equitiesPercentage,
+          totalCash,
+          totalEquities
         });
       } catch (error) {
         console.error('Error loading portfolio summary:', error);
@@ -212,12 +220,12 @@ export function PortfolioSummary() {
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <p className="text-muted-foreground">Cash</p>
-                <p className="font-medium">{formatCurrency(summaryData.totalValue * (summaryData.cashPercentage / 100))}</p>
+                <p className="font-medium">{formatCurrency(summaryData.totalCash ?? summaryData.totalValue * (summaryData.cashPercentage / 100))}</p>
               </div>
               <Progress value={summaryData.cashPercentage} className="h-2" />
               <div className="flex items-center justify-between text-sm">
                 <p className="text-muted-foreground">Equities</p>
-                <p className="font-medium">{formatCurrency(summaryData.totalValue * (summaryData.equitiesPercentage / 100))}</p>
+                <p className="font-medium">{formatCurrency(summaryData.totalEquities ?? summaryData.totalValue * (summaryData.equitiesPercentage / 100))}</p>
               </div>
               <Progress value={summaryData.equitiesPercentage} className="h-2" />
             </div>

@@ -26,10 +26,17 @@ interface AddSecurityDialogProps {
   portfolioId: string;
   onSecurityAdded?: () => void;
   existingTickers?: string[];
+  mode?: 'cash';
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function AddSecurityDialog({ portfolioId, onSecurityAdded, existingTickers = [] }: AddSecurityDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function AddSecurityDialog({ portfolioId, onSecurityAdded, existingTickers = [], mode, open, onOpenChange }: AddSecurityDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = typeof open === 'boolean' && typeof onOpenChange === 'function';
+  const dialogOpen = isControlled ? open : internalOpen;
+  const setDialogOpen = isControlled ? onOpenChange! : setInternalOpen;
+
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
@@ -61,6 +68,34 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded, existingTicker
       }, 100); // Small delay to ensure the section is rendered
     }
   }, [selectedSecurity]);
+
+  // If mode is 'cash', pre-fill and lock fields
+  useEffect(() => {
+    if (mode === 'cash' && dialogOpen) {
+      setSearchQuery('CASH');
+      setSelectedSecurity({
+        symbol: 'CASH',
+        shortname: 'Cash',
+        longname: 'Cash',
+        exchange: 'CASH',
+        quoteType: 'CASH',
+        score: 1,
+        typeDisp: 'Cash',
+        isYahooFinance: false
+      });
+      setLots([{
+        open_date: '',
+        quantity: '',
+        price_per_share: '1.00',
+        notes: ''
+      }]);
+      setTotals({
+        totalShares: 0,
+        totalCost: 0,
+        averageCost: 1.00
+      });
+    }
+  }, [mode, dialogOpen]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -141,7 +176,7 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded, existingTicker
 
       toast.success('Security added successfully with lots');
       onSecurityAdded?.();
-      setIsOpen(false);
+      setDialogOpen(false);
       resetForm();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to add security');
@@ -172,35 +207,77 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded, existingTicker
   }, []);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button>Add Security</Button>
-      </DialogTrigger>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button>{mode === 'cash' ? 'Add Cash' : 'Add Security'}</Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle>Add Security</DialogTitle>
+          <DialogTitle>{mode === 'cash' ? 'Add Cash' : 'Add Security'}</DialogTitle>
           <DialogDescription>
-            Search for a security and add purchase lots to your portfolio
+            {mode === 'cash' ? 'Enter your cash balance for this portfolio.' : 'Search for a security and add purchase lots to your portfolio'}
           </DialogDescription>
         </DialogHeader>
-
         <div className="flex-1 overflow-y-auto space-y-4 min-h-0">
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search by symbol or company name..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              />
+          {mode === 'cash' ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Ticker</label>
+                  <Input value="CASH" disabled />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Name</label>
+                  <Input value="Cash" disabled />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Price</label>
+                  <Input value="1.00" disabled />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Dividend</label>
+                  <Input value="0" disabled />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Yield</label>
+                  <Input value="0" disabled />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Cash Amount</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={lots[0].quantity}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setLots([{ ...lots[0], quantity: val }]);
+                      setTotals({ ...totals, totalShares: Number(val), totalCost: Number(val), averageCost: 1.00 });
+                    }}
+                    placeholder="Enter cash amount (e.g. 5000)"
+                  />
+                </div>
+              </div>
             </div>
-            <Button onClick={handleSearch} disabled={isLoading}>
-              Search
-            </Button>
-          </div>
+          ) : (
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search by symbol or company name..."
+                  className="pl-8"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                />
+              </div>
+              <Button onClick={handleSearch} disabled={isLoading}>
+                Search
+              </Button>
+            </div>
+          )}
 
           {searchResults.length > 0 && (
             <div className="border rounded-md overflow-x-auto overflow-y-hidden">
@@ -280,16 +357,37 @@ export function AddSecurityDialog({ portfolioId, onSecurityAdded, existingTicker
         <DialogFooter className="flex-shrink-0 border-t pt-4">
           <Button
             variant="outline"
-            onClick={() => setIsOpen(false)}
+            onClick={() => setDialogOpen(false)}
             disabled={isLoading}
           >
             Cancel
           </Button>
           <Button
-            onClick={handleAddSecurity}
-            disabled={isLoading || !selectedSecurity || totals.totalShares === 0}
+            onClick={async () => {
+              if (mode === 'cash') {
+                setSelectedSecurity({
+                  symbol: 'CASH',
+                  shortname: 'Cash',
+                  longname: 'Cash',
+                  exchange: 'CASH',
+                  quoteType: 'CASH',
+                  score: 1,
+                  typeDisp: 'Cash',
+                  isYahooFinance: false
+                });
+                setTotals({
+                  totalShares: Number(lots[0].quantity),
+                  totalCost: Number(lots[0].quantity),
+                  averageCost: 1.00
+                });
+                await handleAddSecurity();
+              } else {
+                await handleAddSecurity();
+              }
+            }}
+            disabled={isLoading || (mode === 'cash' && (!lots[0].quantity || Number(lots[0].quantity) <= 0))}
           >
-            {isLoading ? 'Adding...' : 'Add Security'}
+            {isLoading ? 'Adding...' : mode === 'cash' ? 'Add Cash' : 'Add Security'}
           </Button>
         </DialogFooter>
       </DialogContent>

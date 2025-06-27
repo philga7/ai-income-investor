@@ -262,7 +262,9 @@ describe('PortfolioDetail', () => {
       render(<PortfolioDetail portfolioId="123" />);
     });
 
-    expect(screen.getByText('Loading portfolio...')).toBeInTheDocument();
+    // The skeleton renders 6 cards (1 header, 4 main, 1 table/list)
+    const skeletonCards = screen.getAllByTestId('card');
+    expect(skeletonCards.length).toBe(6);
   });
 
   it('should show portfolio not found when portfolio is null', async () => {
@@ -327,8 +329,9 @@ describe('PortfolioDetail', () => {
     const portfolioTitles = await screen.findAllByTestId('card-title');
     expect(portfolioTitles.some(el => el.textContent === 'Test Portfolio')).toBe(true);
 
-    // Check that the securities count is 0
-    const securitiesCount = screen.getByText('0');
-    expect(securitiesCount).toBeInTheDocument();
+    // Check that the securities count is 0 by looking for the specific element
+    // that shows the securities count in the PortfolioHeader
+    const securitiesCountElement = screen.getByText('0', { selector: 'p.text-2xl.font-bold' });
+    expect(securitiesCountElement).toBeInTheDocument();
   });
 }); 

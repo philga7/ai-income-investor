@@ -10,6 +10,7 @@ import { useAuth } from '@/lib/auth';
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { portfolioService, Portfolio } from '@/services/portfolioService';
+import { PortfolioListSkeleton } from '@/components/portfolios/PortfolioListSkeleton';
 
 export default function PortfoliosPage() {
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
@@ -53,7 +54,7 @@ export default function PortfoliosPage() {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <PortfolioListSkeleton />;
   }
 
   return (

@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from '@/lib/auth';
+import { SecuritiesListSkeleton } from '@/components/securities/SecuritiesListSkeleton';
 
 export default function SecuritiesPage() {
   const [securities, setSecurities] = useState<Security[]>([]);
@@ -67,7 +68,7 @@ export default function SecuritiesPage() {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <SecuritiesListSkeleton />;
   }
 
   return (

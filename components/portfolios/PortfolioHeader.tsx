@@ -31,7 +31,7 @@ export function PortfolioHeader({ portfolio, onPortfolioUpdated }: PortfolioHead
         <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
           <div>
             <p className="text-sm font-medium text-muted-foreground">Securities</p>
-            <p className="text-2xl font-bold">{portfolio.securities?.length || 0}</p>
+            <p className="text-2xl font-bold">{portfolio.securities?.filter(s => s.security.ticker !== 'CASH').length || 0}</p>
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground">Total Value</p>
@@ -47,63 +47,11 @@ export function PortfolioHeader({ portfolio, onPortfolioUpdated }: PortfolioHead
           </div>
           <div>
             <p className="text-sm font-medium text-muted-foreground">Total Gain/Loss</p>
-            <p className={`text-2xl font-bold ${metrics.totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {portfolioAnalyticsService.formatCurrency(metrics.totalGainLoss)} ({metrics.totalGainLossPercentage.toFixed(2)}%)
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Avg. P/E Ratio</p>
-            <p className="text-2xl font-bold">
-              {metrics.portfolioMetrics.weightedAveragePE.toFixed(2)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Avg. Beta</p>
-            <p className="text-2xl font-bold">
-              {metrics.portfolioMetrics.weightedAverageBeta.toFixed(2)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">ROE</p>
-            <p className="text-2xl font-bold">
-              {portfolioAnalyticsService.formatPercentage(metrics.portfolioMetrics.weightedAverageROE)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Profit Margin</p>
-            <p className="text-2xl font-bold">
-              {portfolioAnalyticsService.formatPercentage(metrics.portfolioMetrics.weightedAverageProfitMargin)}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Debt/Equity</p>
-            <p className="text-2xl font-bold">
-              {metrics.portfolioMetrics.weightedAverageDebtToEquity.toFixed(2)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Current Ratio</p>
-            <p className="text-2xl font-bold">
-              {metrics.portfolioMetrics.weightedAverageCurrentRatio.toFixed(2)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Revenue Growth</p>
-            <p className="text-2xl font-bold">
-              {portfolioAnalyticsService.formatPercentage(metrics.portfolioMetrics.weightedAverageRevenueGrowth)}
-            </p>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Earnings Growth</p>
-            <p className="text-2xl font-bold">
-              {portfolioAnalyticsService.formatPercentage(metrics.portfolioMetrics.weightedAverageEarningsGrowth)}
-            </p>
+            <span className={`text-2xl font-bold flex items-center gap-2 ${metrics.totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}
+            >
+              {portfolioAnalyticsService.formatCurrency(metrics.totalGainLoss)}
+              <span className="text-base font-semibold">({metrics.totalGainLossPercentage.toFixed(2)}%)</span>
+            </span>
           </div>
         </div>
       </CardContent>
