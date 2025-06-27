@@ -1,79 +1,82 @@
 "use client"
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useState, useEffect } from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { ArrowUpRight, ArrowDownRight, Minus } from "lucide-react";
+import { TechnicalAnalysis, TechnicalIndicator } from '@/src/services/technicalAnalysisService';
+import { useAuth } from '@/lib/auth';
+import { fetchJson } from '@/lib/api-utils';
 
 interface TechnicalIndicatorsProps {
   ticker: string;
 }
 
-interface Indicator {
-  name: string;
-  value: string | number;
-  signal: "buy" | "sell" | "neutral";
-  strength: number; // 0-100
-}
-
 export function TechnicalIndicators({ ticker }: TechnicalIndicatorsProps) {
-  // Mock data - in a real app, this would come from an API
-  const indicators: Indicator[] = [
-    {
-      name: "200-Day SMA",
-      value: ticker === "MSFT" ? "Price below SMA" : "Price above SMA",
-      signal: ticker === "MSFT" ? "buy" : "sell",
-      strength: ticker === "MSFT" ? 85 : 70,
-    },
-    {
-      name: "50-Day SMA",
-      value: ticker === "MSFT" ? "Price above SMA" : "Price above SMA",
-      signal: ticker === "MSFT" ? "sell" : "sell",
-      strength: 60,
-    },
-    {
-      name: "Stochastic Oscillator",
-      value: ticker === "MSFT" ? "30.5 (Oversold)" : "72.3 (Neutral)",
-      signal: ticker === "MSFT" ? "buy" : "neutral",
-      strength: ticker === "MSFT" ? 75 : 50,
-    },
-    {
-      name: "MACD",
-      value: ticker === "MSFT" ? "Bullish Crossover" : "Bearish Divergence",
-      signal: ticker === "MSFT" ? "buy" : "sell",
-      strength: ticker === "MSFT" ? 65 : 80,
-    },
-    {
-      name: "RSI (14)",
-      value: ticker === "MSFT" ? "42.3" : "68.7",
-      signal: ticker === "MSFT" ? "neutral" : "neutral",
-      strength: 50,
-    },
-    {
-      name: "Volume",
-      value: ticker === "MSFT" ? "Above Average" : "Below Average",
-      signal: ticker === "MSFT" ? "buy" : "neutral",
-      strength: ticker === "MSFT" ? 70 : 45,
-    },
-    {
-      name: "Bollinger Bands",
-      value: ticker === "MSFT" ? "Near Lower Band" : "Middle Band",
-      signal: ticker === "MSFT" ? "buy" : "neutral",
-      strength: ticker === "MSFT" ? 80 : 50,
-    },
-  ];
+  const [analysis, setAnalysis] = useState<TechnicalAnalysis | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { session } = useAuth();
 
-  // Calculate overall signal
-  const buySignals = indicators.filter(i => i.signal === "buy").length;
-  const sellSignals = indicators.filter(i => i.signal === "sell").length;
-  const neutralSignals = indicators.filter(i => i.signal === "neutral").length;
-  
-  let overallSignal: "buy" | "sell" | "neutral" = "neutral";
-  if (buySignals > sellSignals && buySignals > neutralSignals) {
-    overallSignal = "buy";
-  } else if (sellSignals > buySignals && sellSignals > neutralSignals) {
-    overallSignal = "sell";
+  useEffect(() => {
+    const fetchAnalysis = async () => {
+      if (!session?.access_token) {
+        setError('Authentication required');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const data = await fetchJson(`/api/technical-analysis?symbol=${ticker}`, session.access_token);
+        setAnalysis(data);
+      } catch (err) {
+        console.error('Error fetching technical analysis:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch technical analysis');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalysis();
+  }, [ticker, session]);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="rounded-lg border p-4">
+          <div className="animate-pulse space-y-4">
+            <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="h-8 bg-gray-200 rounded"></div>
+              <div className="h-8 bg-gray-200 rounded"></div>
+              <div className="h-8 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </div>
+        <div className="h-64 bg-gray-200 rounded animate-pulse"></div>
+      </div>
+    );
   }
+
+  if (error || !analysis) {
+    return (
+      <div className="space-y-6">
+        <div className="rounded-lg border p-4">
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">
+              {error || 'No technical analysis available for this symbol.'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const { indicators, overallSignal, buySignals, sellSignals, neutralSignals } = analysis;
   
   return (
     <div className="space-y-6">
@@ -124,7 +127,15 @@ export function TechnicalIndicators({ ticker }: TechnicalIndicatorsProps) {
           {indicators.map((indicator, index) => (
             <TableRow key={index}>
               <TableCell className="font-medium">{indicator.name}</TableCell>
-              <TableCell>{indicator.value}</TableCell>
+              <TableCell>
+                {indicator.name.includes('SMA') 
+                  ? `$${indicator.value.toFixed(2)}`
+                  : indicator.name === 'Volume'
+                    ? `${indicator.value.toFixed(1)}x`
+                    : indicator.value.toFixed(1)
+                }
+                <div className="text-xs text-muted-foreground">{indicator.description}</div>
+              </TableCell>
               <TableCell>
                 <Badge 
                   variant={indicator.signal === "neutral" ? "outline" : "default"}
@@ -149,7 +160,7 @@ export function TechnicalIndicators({ ticker }: TechnicalIndicatorsProps) {
               <TableCell>
                 <div className="flex items-center gap-2">
                   <Progress value={indicator.strength} className="h-2 w-24" />
-                  <span className="text-xs">{indicator.strength}%</span>
+                  <span className="text-xs">{indicator.strength.toFixed(0)}%</span>
                 </div>
               </TableCell>
             </TableRow>

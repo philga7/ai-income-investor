@@ -7,6 +7,7 @@ import { DividendTimeline } from '@/components/dashboard/dividend-timeline';
 import { RecommendedStocks } from '@/components/dashboard/recommended-stocks';
 import { MarketOverview } from '@/components/dashboard/market-overview';
 import { DividendNews } from '@/components/dashboard/dividend-news';
+import { BuysAndSells } from '@/components/dashboard/buys-and-sells';
 import { PriceDataTest } from '@/components/PriceDataTest';
 import { HistoricalDataTest } from '@/components/HistoricalDataTest';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,29 +51,7 @@ export default function Home() {
           
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {/* Buys and Sells Card */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div className="space-y-1">
-                  <CardTitle>Buys and Sells</CardTitle>
-                  <CardDescription>Top investment opportunities</CardDescription>
-                </div>
-                <Target className="h-5 w-5 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground mb-2">Technical Analysis Coming Soon</p>
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <p>• SMA-50 and SMA-200 calculations</p>
-                      <p>• Stochastics indicator implementation</p>
-                      <p>• Buy/sell range calculations</p>
-                      <p>• Position sizing rules</p>
-                      <p>• Technical analysis visualization</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <BuysAndSells />
             
             <Link href="/portfolios" className="block">
               <DividendTimeline />
