@@ -1,6 +1,7 @@
 'use client';
 
 import { PortfolioDetail } from './portfolio-detail';
+import { PortfolioDetailSkeleton } from '@/components/portfolios/PortfolioDetailSkeleton';
 import { useEffect, useState } from 'react';
 
 interface PageProps {
@@ -14,9 +15,9 @@ export default function Page({ params }: PageProps) {
     params.then(({ id }) => setId(id));
   }, [params]);
 
-  // Show loading while params are being resolved
+  // Show skeleton while params are being resolved
   if (!id) {
-    return <div>Loading...</div>;
+    return <PortfolioDetailSkeleton />;
   }
 
   // Always pass initialPortfolio as null to force fresh data fetch

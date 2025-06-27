@@ -306,13 +306,13 @@ export function PortfolioDetail({ portfolioId, initialPortfolio }: PortfolioDeta
 
         {/* Timing Tab */}
         <TabsContent value="timing" className="space-y-6">
+          {/* Dividend Calendar */}
+          <DividendCalendar portfolio={portfolio} />
+
           {/* Dividend Timing Dashboard - Expanded */}
           {analytics && (
             <DividendTimingDashboard portfolio={portfolio} />
           )}
-
-          {/* Dividend Calendar */}
-          <DividendCalendar portfolio={portfolio} />
         </TabsContent>
 
         {/* Securities Tab */}
