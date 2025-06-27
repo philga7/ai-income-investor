@@ -11,7 +11,8 @@ interface DividendEvent {
   ticker: string;
   amount: number;
   type: "ex-date" | "payment";
-  portfolioName: string;
+  portfolioNames: string[];
+  totalAmount: number;
 }
 
 export function DividendTimeline() {
@@ -29,7 +30,7 @@ export function DividendTimeline() {
           return;
         }
 
-        const allEvents: DividendEvent[] = [];
+        const eventMap = new Map<string, DividendEvent>();
 
         // Collect dividend events from all portfolios
         for (const portfolio of portfolios) {
@@ -39,20 +40,45 @@ export function DividendTimeline() {
             for (const dividend of dividends) {
               const security = portfolio.securities.find(s => s.security.id === dividend.security_id);
               if (security) {
-                allEvents.push({
-                  date: dividend.ex_date,
-                  ticker: security.security.ticker,
-                  amount: dividend.amount,
-                  type: "ex-date",
-                  portfolioName: portfolio.name
-                });
-                allEvents.push({
-                  date: dividend.payment_date,
-                  ticker: security.security.ticker,
-                  amount: dividend.amount,
-                  type: "payment",
-                  portfolioName: portfolio.name
-                });
+                // Create unique keys for ex-date and payment events
+                const exDateKey = `${security.security.ticker}-${dividend.ex_date}-ex-date`;
+                const paymentKey = `${security.security.ticker}-${dividend.payment_date}-payment`;
+                
+                // Handle ex-date event
+                if (eventMap.has(exDateKey)) {
+                  const existingEvent = eventMap.get(exDateKey)!;
+                  if (!existingEvent.portfolioNames.includes(portfolio.name)) {
+                    existingEvent.portfolioNames.push(portfolio.name);
+                  }
+                  existingEvent.totalAmount += dividend.amount;
+                } else {
+                  eventMap.set(exDateKey, {
+                    date: dividend.ex_date,
+                    ticker: security.security.ticker,
+                    amount: dividend.amount,
+                    type: "ex-date",
+                    portfolioNames: [portfolio.name],
+                    totalAmount: dividend.amount
+                  });
+                }
+                
+                // Handle payment event
+                if (eventMap.has(paymentKey)) {
+                  const existingEvent = eventMap.get(paymentKey)!;
+                  if (!existingEvent.portfolioNames.includes(portfolio.name)) {
+                    existingEvent.portfolioNames.push(portfolio.name);
+                  }
+                  existingEvent.totalAmount += dividend.amount;
+                } else {
+                  eventMap.set(paymentKey, {
+                    date: dividend.payment_date,
+                    ticker: security.security.ticker,
+                    amount: dividend.amount,
+                    type: "payment",
+                    portfolioNames: [portfolio.name],
+                    totalAmount: dividend.amount
+                  });
+                }
               }
             }
           } catch (error) {
@@ -60,11 +86,12 @@ export function DividendTimeline() {
           }
         }
 
-        // Sort events by date
+        // Convert map to array and sort by date
+        const allEvents = Array.from(eventMap.values());
         allEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
         
-        // Limit to next 10 events to keep the UI clean
-        setDividendEvents(allEvents.slice(0, 10));
+        // Limit to next 5 events to keep the UI clean and focused
+        setDividendEvents(allEvents.slice(0, 5));
       } catch (error) {
         console.error('Error loading dividend events:', error);
       } finally {
@@ -113,7 +140,11 @@ export function DividendTimeline() {
                       <p className="text-sm font-medium leading-none">
                         {event.ticker} - {event.type === "ex-date" ? "Ex-Dividend" : "Payment"}
                       </p>
-                      <span className="text-xs text-muted-foreground">{event.portfolioName}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {event.portfolioNames.length > 1 
+                          ? `${event.portfolioNames.length} portfolios` 
+                          : event.portfolioNames[0]}
+                      </span>
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {new Intl.DateTimeFormat('en-US', {
@@ -124,6 +155,11 @@ export function DividendTimeline() {
                     </p>
                     <p className="text-sm font-medium">
                       ${event.amount.toFixed(2)} per share
+                      {event.portfolioNames.length > 1 && (
+                        <span className="text-xs text-muted-foreground ml-2">
+                          (${event.totalAmount.toFixed(2)} total)
+                        </span>
+                      )}
                     </p>
                   </div>
                 </div>

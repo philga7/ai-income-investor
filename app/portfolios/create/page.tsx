@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { CreatePortfolioSkeleton } from '@/components/portfolios/CreatePortfolioSkeleton';
 
 export default function CreatePortfolioPage() {
   const router = useRouter();
@@ -62,7 +63,7 @@ export default function CreatePortfolioPage() {
   };
 
   if (profileLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return <CreatePortfolioSkeleton />;
   }
 
   if (!isProfileComplete) {

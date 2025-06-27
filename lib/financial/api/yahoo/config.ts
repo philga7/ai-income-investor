@@ -34,6 +34,7 @@ export const YAHOO_FINANCE_CONFIG = {
     'price',
     'summaryDetail',
     'defaultKeyStatistics',
+    'calendarEvents',
   ] as const,
 
   // Error handling
@@ -47,4 +48,13 @@ export const YAHOO_FINANCE_CONFIG = {
   },
 } as const;
 
-export type YahooFinanceModule = typeof YAHOO_FINANCE_CONFIG.defaultModules[number]; 
+export type YahooFinanceModule =
+  | 'assetProfile'
+  | 'balanceSheetHistory'
+  | 'cashflowStatementHistory'
+  | 'earnings'
+  | 'financialData'
+  | 'price'
+  | 'summaryDetail'
+  | 'defaultKeyStatistics'
+  | 'calendarEvents'; 

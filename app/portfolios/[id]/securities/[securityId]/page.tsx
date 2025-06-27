@@ -15,6 +15,7 @@ import { TechnicalIndicators } from '@/components/securities/technical-indicator
 import { DividendHistory } from '@/components/securities/dividend-history';
 import { AnalystRecommendations } from '@/components/securities/analyst-recommendations';
 import { BreadcrumbNav } from '@/components/ui/breadcrumb';
+import { SecurityDetailSkeleton } from '@/components/portfolios/SecurityDetailSkeleton';
 
 interface SecurityDetailPageProps {
   params: Promise<{ id: string; securityId: string }>;
@@ -114,7 +115,7 @@ export default function SecurityDetailPage({ params }: SecurityDetailPageProps) 
   }, [params]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <SecurityDetailSkeleton />;
   }
 
   if (!security) {

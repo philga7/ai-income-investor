@@ -398,42 +398,98 @@ class YahooFinanceClient {
       if (process.env.NODE_ENV === 'development') {
         console.log('YahooFinanceClient: Making API call for', symbol);
       }
-      const result = await yahooFinance.quoteSummary(symbol, {
-        modules: [...modules],
-      });
+      
+      try {
+        const result = await yahooFinance.quoteSummary(symbol, {
+          modules: [...modules],
+        });
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('YahooFinanceClient: Got raw result for', symbol, result);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('YahooFinanceClient: Got raw result for', symbol, {
+            hasResult: !!result,
+            resultKeys: result ? Object.keys(result) : [],
+            hasSummaryDetail: !!result?.summaryDetail,
+            summaryDetailKeys: result?.summaryDetail ? Object.keys(result.summaryDetail) : []
+          });
+        }
+
+        // Check if we got a valid result
+        if (!result) {
+          throw new Error(`No data returned for symbol: ${symbol}`);
+        }
+
+        // Normalize calendarEvents
+        let normalizedCalendarEvents: import('./types').CalendarEvents | undefined = undefined;
+        if (result.calendarEvents) {
+          const raw = result.calendarEvents;
+          let exDividendDate: number | undefined = undefined;
+          let dividendDate: number | undefined = undefined;
+          if (raw.exDividendDate instanceof Date) {
+            exDividendDate = Math.floor(raw.exDividendDate.getTime() / 1000);
+          } else if (typeof raw.exDividendDate === 'number') {
+            exDividendDate = raw.exDividendDate;
+          }
+          if (raw.dividendDate instanceof Date) {
+            dividendDate = Math.floor(raw.dividendDate.getTime() / 1000);
+          } else if (typeof raw.dividendDate === 'number') {
+            dividendDate = raw.dividendDate;
+          }
+          const earnings = Array.isArray(raw.earnings) ? raw.earnings : undefined;
+          const earningsDate = Array.isArray((raw as any)?.earningsDate) ? (raw as any).earningsDate : undefined;
+          normalizedCalendarEvents = {
+            ...(exDividendDate !== undefined ? { exDividendDate } : {}),
+            ...(dividendDate !== undefined ? { dividendDate } : {}),
+            ...(earnings ? { earnings } : {}),
+            ...(earningsDate ? { earningsDate } : {}),
+          };
+        }
+
+        const transformedResult: QuoteSummary = {
+          ...result,
+          assetProfile: result.assetProfile ? this.transformAssetProfile(result.assetProfile) : undefined,
+          balanceSheetHistory: result.balanceSheetHistory ? {
+            balanceSheetStatements: result.balanceSheetHistory.balanceSheetStatements.map(stmt => 
+              this.transformBalanceSheetStatement(stmt)
+            ),
+            maxAge: result.balanceSheetHistory.maxAge,
+          } : undefined,
+          cashflowStatementHistory: result.cashflowStatementHistory ? {
+            cashflowStatements: result.cashflowStatementHistory.cashflowStatements.map(stmt =>
+              this.transformCashflowStatement(stmt)
+            ),
+            maxAge: result.cashflowStatementHistory.maxAge,
+          } : undefined,
+          earnings: result.earnings ? this.transformEarnings(result.earnings) : undefined,
+          price: result.price ? this.transformPrice(result.price) : undefined,
+          summaryDetail: result.summaryDetail ? this.transformSummaryDetail(result.summaryDetail) : undefined,
+          financialData: result.financialData ? this.transformFinancialData(result.financialData) : undefined,
+          calendarEvents: normalizedCalendarEvents,
+        };
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log('YahooFinanceClient: Transformed result for', symbol, {
+            hasSummaryDetail: !!transformedResult.summaryDetail,
+            summaryDetailKeys: transformedResult.summaryDetail ? Object.keys(transformedResult.summaryDetail) : []
+          });
+        }
+
+        this.setCachedData(cacheKey, transformedResult);
+        return transformedResult;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        
+        // Log specific details for any problematic ticker
+        console.error(`Yahoo Finance error for ${symbol}:`, {
+          symbol,
+          error,
+          message: errorMessage,
+          stack: error instanceof Error ? error.stack : undefined,
+          modules
+        });
+        
+        // Re-throw the error to be handled by the retry logic
+        throw error;
       }
-
-      // Transform the result to match our QuoteSummary type
-      const transformedResult: QuoteSummary = {
-        ...result,
-        assetProfile: result.assetProfile ? this.transformAssetProfile(result.assetProfile) : undefined,
-        balanceSheetHistory: result.balanceSheetHistory ? {
-          balanceSheetStatements: result.balanceSheetHistory.balanceSheetStatements.map(stmt => 
-            this.transformBalanceSheetStatement(stmt)
-          ),
-          maxAge: result.balanceSheetHistory.maxAge,
-        } : undefined,
-        cashflowStatementHistory: result.cashflowStatementHistory ? {
-          cashflowStatements: result.cashflowStatementHistory.cashflowStatements.map(stmt =>
-            this.transformCashflowStatement(stmt)
-          ),
-          maxAge: result.cashflowStatementHistory.maxAge,
-        } : undefined,
-        earnings: result.earnings ? this.transformEarnings(result.earnings) : undefined,
-        price: result.price ? this.transformPrice(result.price) : undefined,
-        summaryDetail: result.summaryDetail ? this.transformSummaryDetail(result.summaryDetail) : undefined,
-        financialData: result.financialData ? this.transformFinancialData(result.financialData) : undefined,
-      };
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('YahooFinanceClient: Transformed result for', symbol, transformedResult);
-      }
-
-      this.setCachedData(cacheKey, transformedResult);
-      return transformedResult;
     });
   }
 

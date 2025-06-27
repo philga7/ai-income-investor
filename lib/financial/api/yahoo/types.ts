@@ -4,6 +4,13 @@ export interface YahooFinanceError {
   description?: string;
 }
 
+export interface CalendarEvents {
+  exDividendDate?: number;
+  dividendDate?: number;
+  earnings?: Array<{ raw: number; fmt: string }>;
+  earningsDate?: Array<{ raw: number; fmt: string }>;
+}
+
 export interface QuoteSummary {
   assetProfile?: AssetProfile;
   balanceSheetHistory?: BalanceSheetHistory;
@@ -12,6 +19,7 @@ export interface QuoteSummary {
   financialData?: FinancialData;
   price?: Price;
   summaryDetail?: SummaryDetail;
+  calendarEvents?: CalendarEvents;
 }
 
 export interface AssetProfile {
