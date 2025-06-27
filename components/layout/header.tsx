@@ -3,12 +3,15 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ModeToggle } from "@/components/mode-toggle";
-import { Bell, Search, User } from "lucide-react";
+import { Bell, Search } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/lib/auth";
+import { UserProfileDropdown } from "@/components/auth/user-profile-dropdown";
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -41,26 +44,22 @@ export default function Header() {
         </div>
 
         <div className="flex items-center justify-end space-x-4">
-          <div className="relative hidden md:flex">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search securities..."
-              className="w-[200px] pl-8 md:w-[260px] lg:w-[320px]"
-            />
-          </div>
+          {user ? (
+            <>
+              <Button variant="ghost" size="icon">
+                <Bell className="h-5 w-5" />
+                <span className="sr-only">Notifications</span>
+              </Button>
 
-          <Button variant="ghost" size="icon">
-            <Bell className="h-5 w-5" />
-            <span className="sr-only">Notifications</span>
-          </Button>
+              <ModeToggle />
 
-          <ModeToggle />
-
-          <Button variant="ghost" size="icon">
-            <User className="h-5 w-5" />
-            <span className="sr-only">Profile</span>
-          </Button>
+              <UserProfileDropdown />
+            </>
+          ) : (
+            <Button asChild variant="default">
+              <Link href="/auth/sign-in">Sign in</Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>

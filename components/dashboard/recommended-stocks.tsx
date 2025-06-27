@@ -59,7 +59,7 @@ const recommendedStocks: RecommendedStock[] = [
 
 export function RecommendedStocks() {
   return (
-    <Card className="col-span-1">
+    <Card className="col-span-1 transition-all duration-200 hover:shadow-md">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="space-y-1">
           <CardTitle>Recommended Stocks</CardTitle>

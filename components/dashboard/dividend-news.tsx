@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Newspaper } from "lucide-react";
+import { Newspaper, ExternalLink } from "lucide-react";
 import Link from "next/link";
 
 interface NewsItem {
@@ -17,35 +17,35 @@ const newsItems: NewsItem[] = [
     title: "Johnson & Johnson Raises Dividend by 5.3%, Marking 62nd Consecutive Year",
     source: "Dividend.com",
     date: "2025-01-02",
-    url: "#",
+    url: "https://www.dividend.com/news/",
     category: "dividend-increase",
   },
   {
     title: "10 High-Yield Dividend Stocks to Watch in 2025",
     source: "Seeking Alpha",
     date: "2025-01-03",
-    url: "#",
+    url: "https://seekingalpha.com/dividends",
     category: "analysis",
   },
   {
     title: "Federal Reserve Holds Rates Steady, Dividend Stocks Rally",
     source: "CNBC",
     date: "2025-01-04",
-    url: "#",
+    url: "https://www.cnbc.com/markets/",
     category: "market-news",
   },
   {
     title: "Coca-Cola Announces 3% Dividend Increase, 61st Annual Raise",
     source: "Bloomberg",
     date: "2025-01-05",
-    url: "#",
+    url: "https://www.bloomberg.com/markets",
     category: "dividend-increase",
   },
   {
     title: "Dividend Aristocrats Outlook: Analysts' Top Picks for 2025",
     source: "Morningstar",
     date: "2025-01-06",
-    url: "#",
+    url: "https://www.morningstar.com/",
     category: "analysis",
   },
 ];
@@ -61,7 +61,10 @@ export function DividendNews() {
           <CardTitle>Dividend News</CardTitle>
           <CardDescription>Latest updates and analysis</CardDescription>
         </div>
-        <Newspaper className="h-5 w-5 text-muted-foreground" />
+        <div className="flex items-center gap-2">
+          <Newspaper className="h-5 w-5 text-muted-foreground" />
+          <ExternalLink className="h-4 w-4 text-muted-foreground" />
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-5">
@@ -75,7 +78,7 @@ export function DividendNews() {
               <div key={index} className="border-b border-border pb-4 last:border-0 last:pb-0">
                 <div className="flex justify-between items-start mb-1">
                   <h3 className="font-medium">
-                    <Link href={item.url} className="hover:underline">
+                    <Link href={item.url} className="hover:underline" target="_blank" rel="noopener noreferrer">
                       {item.title}
                     </Link>
                   </h3>

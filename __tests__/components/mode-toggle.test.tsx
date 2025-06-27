@@ -1,8 +1,8 @@
 import React from 'react';
 import '@testing-library/jest-dom';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@/__tests__/lib/test-utils';
 import { ModeToggle } from '@/components/mode-toggle';
-import { ThemeProvider } from 'next-themes';
+import { MockProviders } from '@/__tests__/lib/mock-providers';
 
 // Mock the entire Radix UI DropdownMenu to render children inline
 jest.mock('@/components/ui/dropdown-menu', () => ({
@@ -26,9 +26,9 @@ jest.mock('@radix-ui/react-portal', () => ({
 describe('ModeToggle', () => {
   const renderWithTheme = (ui: React.ReactElement) => {
     return render(
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <MockProviders theme="system">
         {ui}
-      </ThemeProvider>
+      </MockProviders>
     );
   };
 
@@ -40,16 +40,11 @@ describe('ModeToggle', () => {
   it('shows theme options when clicked', async () => {
     renderWithTheme(<ModeToggle />);
     
-    // Click the button to open the dropdown
     const button = screen.getByRole('button', { name: /toggle theme/i });
     await act(async () => {
       fireEvent.click(button);
     });
     
-    // Log the document body to inspect rendered content
-    console.log('Document body after click:', document.body.innerHTML);
-    
-    // Wait for and verify the menu items
     const menuItems = await screen.findAllByRole('menuitem');
     expect(menuItems).toHaveLength(3);
     expect(menuItems[0]).toHaveTextContent('Light');
@@ -60,18 +55,17 @@ describe('ModeToggle', () => {
   it('changes theme when option is selected', async () => {
     renderWithTheme(<ModeToggle />);
     
-    // Click the button to open the dropdown
     const button = screen.getByRole('button', { name: /toggle theme/i });
     await act(async () => {
       fireEvent.click(button);
     });
     
-    // Click the dark theme option
     const darkOption = await screen.findByRole('menuitem', { name: /dark/i });
     await act(async () => {
       fireEvent.click(darkOption);
     });
     
-    // Verify the theme was changed (this would need to be adapted based on how you want to verify theme changes)
+    // Verify the theme was changed by checking the document's class
+    expect(document.documentElement).toHaveClass('dark');
   });
 });

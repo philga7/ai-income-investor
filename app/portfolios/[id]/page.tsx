@@ -1,20 +1,26 @@
-import { PortfolioDetail } from "./portfolio-detail";
+'use client';
 
-export async function generateStaticParams() {
-  // Return an array of portfolio IDs you want to pre-render
-  return [
-    { id: 'core-dividend' },
-    { id: 'growth-income' },
-    { id: 'retirement' }
-  ];
-}
+import { PortfolioDetail } from './portfolio-detail';
+import { PortfolioDetailSkeleton } from '@/components/portfolios/PortfolioDetailSkeleton';
+import { useEffect, useState } from 'react';
 
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-export default async function Page({ params }: PageProps) {
-  const { id } = await params;
+export default function Page({ params }: PageProps) {
+  const [id, setId] = useState<string | null>(null);
   
-  return <PortfolioDetail portfolioId={id} />;
+  useEffect(() => {
+    params.then(({ id }) => setId(id));
+  }, [params]);
+
+  // Show skeleton while params are being resolved
+  if (!id) {
+    return <PortfolioDetailSkeleton />;
+  }
+
+  // Always pass initialPortfolio as null to force fresh data fetch
+  // This ensures that newly added securities appear after page refresh
+  return <PortfolioDetail portfolioId={id} initialPortfolio={null} />;
 }

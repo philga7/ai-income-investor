@@ -13,7 +13,6 @@ test.describe('Basic Navigation', () => {
     // Check if header elements are visible
     await expect(page.getByRole('banner')).toBeVisible();
     await expect(page.getByRole('link', { name: 'AI Income Investor' })).toBeVisible();
-    await expect(page.getByRole('searchbox', { name: 'Search securities...' })).toBeVisible();
     
     // Check if sidebar navigation elements are visible
     await expect(page.getByRole('complementary')).toBeVisible();

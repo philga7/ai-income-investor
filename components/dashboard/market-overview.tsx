@@ -1,28 +1,149 @@
 "use client"
 
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BadgeDelta, AreaChart } from "@tremor/react";
+import { AreaChart } from "@tremor/react";
 import { ArrowUpDown } from "lucide-react";
+import { SecurityQuote } from '@/services/financialService';
+import { useAuth } from '@/lib/auth';
+import { fetchJson } from '@/lib/api-utils';
+
+interface MarketIndexData {
+  name: string;
+  symbol: string;
+  value: number;
+  change: number;
+  changePercent: number;
+}
+
+interface ChartDataPoint {
+  date: string;
+  [key: string]: number | string;
+}
+
+const indices = [
+  { name: 'S&P 500', symbol: '^GSPC', displayName: 'S&P 500' },
+  { name: 'Dow Jones', symbol: '^DJI', displayName: 'DJIA' },
+  { name: 'Nasdaq', symbol: '^IXIC', displayName: 'NASDAQ' },
+];
 
 export function MarketOverview() {
-  const marketData = [
-    { date: "2024-12-01", "S&P 500": 4800, "DJIA": 38000, "NASDAQ": 16500 },
-    { date: "2024-12-02", "S&P 500": 4820, "DJIA": 38200, "NASDAQ": 16600 },
-    { date: "2024-12-03", "S&P 500": 4790, "DJIA": 38100, "NASDAQ": 16400 },
-    { date: "2024-12-04", "S&P 500": 4830, "DJIA": 38300, "NASDAQ": 16700 },
-    { date: "2024-12-05", "S&P 500": 4850, "DJIA": 38500, "NASDAQ": 16800 },
-    { date: "2024-12-06", "S&P 500": 4840, "DJIA": 38400, "NASDAQ": 16750 },
-    { date: "2024-12-07", "S&P 500": 4870, "DJIA": 38600, "NASDAQ": 16900 },
-  ];
+  const { session } = useAuth();
+  const [marketData, setMarketData] = useState<MarketIndexData[]>([]);
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const marketIndices = [
-    { name: "S&P 500", value: 4870, change: 1.5 },
-    { name: "DJIA", value: 38600, change: 0.8 },
-    { name: "NASDAQ", value: 16900, change: 2.1 },
-  ];
+  useEffect(() => {
+    async function loadMarketData() {
+      if (!session) {
+        setLoading(false);
+        setError('You must be logged in to view market data.');
+        return;
+      }
+
+      try {
+        const quotePromises = indices.map(index => 
+          fetchJson(`/api/quotes?symbol=${index.symbol}`, session.access_token)
+        );
+
+        const historicalPromises = indices.map(index => {
+          const endDate = new Date().toISOString().split('T')[0];
+          const startDate = new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0];
+          return fetchJson(`/api/historical?symbol=${index.symbol}&startDate=${startDate}&endDate=${endDate}`, session.access_token);
+        });
+        
+        const indexQuotes: SecurityQuote[] = await Promise.all(quotePromises);
+        const historicalData = await Promise.all(historicalPromises);
+
+        const marketIndexData = indexQuotes.map((quote, i) => ({
+          name: indices[i].displayName,
+          symbol: quote.symbol,
+          value: quote.price.regularMarketPrice || 0,
+          change: quote.price.regularMarketChange || 0,
+          changePercent: (quote.price.regularMarketChangePercent || 0) * 100,
+        }));
+        setMarketData(marketIndexData);
+        
+        // Normalize and format historical data for the chart
+        const formattedChartData: ChartDataPoint[] = [];
+        if (historicalData.every(h => h && h.length > 0)) {
+          // Find the first valid data point for each index to use as a baseline
+          const baselines = historicalData.map(h => h.find((p: any) => p.close !== null)?.close || 0);
+
+          // Use the length of the first historical data array as the reference
+          historicalData[0].forEach((point: any, i: number) => {
+            const dateStr = new Date(point.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            const dataPoint: ChartDataPoint = { date: dateStr };
+
+            indices.forEach((index, j) => {
+              const currentClose = historicalData[j]?.[i]?.close;
+              const baseline = baselines[j];
+              if (currentClose !== null && currentClose !== undefined && baseline) {
+                // Calculate percentage change from baseline
+                dataPoint[index.displayName] = ((currentClose - baseline) / baseline) * 100;
+              } else {
+                dataPoint[index.displayName] = 0; // Default to 0 if data is missing
+              }
+            });
+            formattedChartData.push(dataPoint);
+          });
+        }
+        setChartData(formattedChartData);
+        
+      } catch (err: any) {
+        console.error('Error fetching market data:', err);
+        setError(err.message || 'Failed to load market data. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadMarketData();
+  }, [session]);
+
+  if (loading) {
+    return (
+      <Card className="col-span-1">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div className="space-y-1">
+            <CardTitle>Market Overview</CardTitle>
+            <CardDescription>Major indices performance</CardDescription>
+          </div>
+          <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <div className="text-muted-foreground">Loading...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="col-span-1">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div className="space-y-1">
+            <CardTitle>Market Overview</CardTitle>
+            <CardDescription>Major indices performance</CardDescription>
+          </div>
+          <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center text-red-500">
+              <p>{error}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card className="col-span-1">
+    <Card className="h-full flex flex-col col-span-1 overflow-hidden transition-all duration-200 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="space-y-1">
           <CardTitle>Market Overview</CardTitle>
@@ -30,37 +151,47 @@ export function MarketOverview() {
         </div>
         <ArrowUpDown className="h-5 w-5 text-muted-foreground" />
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent>
         <div className="grid grid-cols-3 gap-3">
-          {marketIndices.map((index) => (
+          {marketData.map((index) => (
             <div key={index.name} className="space-y-1">
               <p className="text-xs text-muted-foreground">{index.name}</p>
-              <p className="text-lg font-semibold">{index.value.toLocaleString()}</p>
-              <BadgeDelta
-                deltaType={index.change >= 0 ? "increase" : "decrease"}
-                size="xs"
-              >
-                {index.change > 0 ? "+" : ""}{index.change}%
-              </BadgeDelta>
+              <p className="text-lg font-semibold">{index.value.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+              <div className="space-y-0.5">
+                {/* Points change */}
+                <p className={`text-xs font-medium ${
+                  index.change >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {index.change >= 0 ? '+' : ''}{index.change.toFixed(2)}
+                </p>
+                {/* Percentage change */}
+                <p className={`text-xs font-medium ${
+                  index.changePercent >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  ({index.changePercent >= 0 ? '+' : ''}{index.changePercent.toFixed(2)}%)
+                </p>
+              </div>
             </div>
           ))}
         </div>
-        
-        <div className="h-32">
-          <AreaChart
-            data={marketData}
-            index="date"
-            categories={["S&P 500"]}
-            colors={["emerald"]}
-            showLegend={false}
-            showXAxis={false}
-            showYAxis={false}
-            showGridLines={false}
-            showAnimation={true}
-            startEndOnly={true}
-          />
-        </div>
       </CardContent>
+      
+      <div className="flex-grow w-full">
+        <AreaChart
+          data={chartData}
+          index="date"
+          categories={indices.map((index) => index.displayName)}
+          colors={["emerald", "cyan", "indigo"]}
+          valueFormatter={(number: number) => `${number.toFixed(2)}%`}
+          showLegend={false}
+          showXAxis={false}
+          showYAxis={false}
+          showGridLines={false}
+          showAnimation={true}
+          startEndOnly={true}
+          className="h-full w-full"
+        />
+      </div>
     </Card>
   );
 }
