@@ -142,7 +142,7 @@ export function PortfolioSummary() {
 
   if (loading) {
     return (
-      <Card className="col-span-1">
+      <Card className="w-full">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <div className="space-y-1">
             <CardTitle>Portfolio Summary</CardTitle>
@@ -161,7 +161,7 @@ export function PortfolioSummary() {
 
   if (!summaryData) {
     return (
-      <Card className="col-span-1">
+      <Card className="w-full">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <div className="space-y-1">
             <CardTitle>Portfolio Summary</CardTitle>
@@ -182,7 +182,7 @@ export function PortfolioSummary() {
   }
 
   return (
-    <Card className="col-span-1">
+    <Card className="w-full">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="space-y-1">
           <CardTitle>Portfolio Summary</CardTitle>
@@ -204,87 +204,93 @@ export function PortfolioSummary() {
             </TabsTrigger>
           </TabsList>
           <TabsContent value="value" className="space-y-4 pt-4">
-            <div 
-              className="flex items-center justify-between cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors"
-              onClick={handleContentClick}
-            >
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Value</p>
-                <p className="text-2xl font-bold">{formatCurrency(summaryData.totalValue)}</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div 
+                className="flex items-center justify-between cursor-pointer hover:bg-muted/50 p-3 rounded-md transition-colors"
+                onClick={handleContentClick}
+              >
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Value</p>
+                  <p className="text-2xl font-bold">{formatCurrency(summaryData.totalValue)}</p>
+                </div>
+                <div className="flex items-center text-sm text-green-500">
+                  <TrendingUp className="mr-1 h-4 w-4" data-testid="trending-up-icon" />
+                  {formatPercentage(summaryData.totalGainLossPercentage)}
+                </div>
               </div>
-              <div className="flex items-center text-sm text-green-500">
-                <TrendingUp className="mr-1 h-4 w-4" data-testid="trending-up-icon" />
-                {formatPercentage(summaryData.totalGainLossPercentage)}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <p className="text-muted-foreground">Cash</p>
+                  <p className="font-medium">{formatCurrency(summaryData.totalCash ?? summaryData.totalValue * (summaryData.cashPercentage / 100))}</p>
+                </div>
+                <Progress value={summaryData.cashPercentage} className="h-2" />
+                <div className="flex items-center justify-between text-sm">
+                  <p className="text-muted-foreground">Equities</p>
+                  <p className="font-medium">{formatCurrency(summaryData.totalEquities ?? summaryData.totalValue * (summaryData.equitiesPercentage / 100))}</p>
+                </div>
+                <Progress value={summaryData.equitiesPercentage} className="h-2" />
               </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <p className="text-muted-foreground">Cash</p>
-                <p className="font-medium">{formatCurrency(summaryData.totalCash ?? summaryData.totalValue * (summaryData.cashPercentage / 100))}</p>
-              </div>
-              <Progress value={summaryData.cashPercentage} className="h-2" />
-              <div className="flex items-center justify-between text-sm">
-                <p className="text-muted-foreground">Equities</p>
-                <p className="font-medium">{formatCurrency(summaryData.totalEquities ?? summaryData.totalValue * (summaryData.equitiesPercentage / 100))}</p>
-              </div>
-              <Progress value={summaryData.equitiesPercentage} className="h-2" />
             </div>
           </TabsContent>
           <TabsContent value="yield" className="space-y-4 pt-4">
-            <div 
-              className="flex items-center justify-between cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors"
-              onClick={handleContentClick}
-            >
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Avg. Yield</p>
-                <p className="text-2xl font-bold">{formatPercentage(summaryData.portfolioYield)}</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div 
+                className="flex items-center justify-between cursor-pointer hover:bg-muted/50 p-3 rounded-md transition-colors"
+                onClick={handleContentClick}
+              >
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Avg. Yield</p>
+                  <p className="text-2xl font-bold">{formatPercentage(summaryData.portfolioYield)}</p>
+                </div>
+                <div className="flex items-center text-sm text-green-500">
+                  <TrendingUp className="mr-1 h-4 w-4" data-testid="trending-up-icon" />
+                  +0.2%
+                </div>
               </div>
-              <div className="flex items-center text-sm text-green-500">
-                <TrendingUp className="mr-1 h-4 w-4" data-testid="trending-up-icon" />
-                +0.2%
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <p className="text-muted-foreground">Highest Yield</p>
-                <p className="font-medium">
-                  {summaryData.highestYield 
-                    ? `${summaryData.highestYield.ticker} - ${formatPercentage(summaryData.highestYield.yield)}`
-                    : 'N/A'
-                  }
-                </p>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <p className="text-muted-foreground">Lowest Yield</p>
-                <p className="font-medium">
-                  {summaryData.lowestYield 
-                    ? `${summaryData.lowestYield.ticker} - ${formatPercentage(summaryData.lowestYield.yield)}`
-                    : 'N/A'
-                  }
-                </p>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <p className="text-muted-foreground">Highest Yield</p>
+                  <p className="font-medium">
+                    {summaryData.highestYield 
+                      ? `${summaryData.highestYield.ticker} - ${formatPercentage(summaryData.highestYield.yield)}`
+                      : 'N/A'
+                    }
+                  </p>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <p className="text-muted-foreground">Lowest Yield</p>
+                  <p className="font-medium">
+                    {summaryData.lowestYield 
+                      ? `${summaryData.lowestYield.ticker} - ${formatPercentage(summaryData.lowestYield.yield)}`
+                      : 'N/A'
+                    }
+                  </p>
+                </div>
               </div>
             </div>
           </TabsContent>
           <TabsContent value="income" className="space-y-4 pt-4">
-            <div 
-              className="flex items-center justify-between cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors"
-              onClick={handleContentClick}
-            >
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Annual Income</p>
-                <p className="text-2xl font-bold">{formatCurrency(summaryData.totalAnnualDividend)}</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div 
+                className="flex items-center justify-between cursor-pointer hover:bg-muted/50 p-3 rounded-md transition-colors"
+                onClick={handleContentClick}
+              >
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Annual Income</p>
+                  <p className="text-2xl font-bold">{formatCurrency(summaryData.totalAnnualDividend)}</p>
+                </div>
+                <Calculator className="h-5 w-5 text-muted-foreground" data-testid="calculator-icon" />
               </div>
-              <Calculator className="h-5 w-5 text-muted-foreground" data-testid="calculator-icon" />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <p className="text-muted-foreground">YTD Received</p>
-                <p className="font-medium">{formatCurrency(summaryData.ytdReceived)}</p>
-              </div>
-              <Progress value={(summaryData.ytdReceived / summaryData.totalAnnualDividend) * 100} className="h-2" />
-              <div className="flex items-center justify-between text-sm">
-                <p className="text-muted-foreground">Next 30 Days</p>
-                <p className="font-medium">{formatCurrency(summaryData.next30Days)}</p>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <p className="text-muted-foreground">YTD Received</p>
+                  <p className="font-medium">{formatCurrency(summaryData.ytdReceived)}</p>
+                </div>
+                <Progress value={(summaryData.ytdReceived / summaryData.totalAnnualDividend) * 100} className="h-2" />
+                <div className="flex items-center justify-between text-sm">
+                  <p className="text-muted-foreground">Next 30 Days</p>
+                  <p className="font-medium">{formatCurrency(summaryData.next30Days)}</p>
+                </div>
               </div>
             </div>
           </TabsContent>
