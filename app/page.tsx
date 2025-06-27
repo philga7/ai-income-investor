@@ -11,7 +11,7 @@ import { PriceDataTest } from '@/components/PriceDataTest';
 import { HistoricalDataTest } from '@/components/HistoricalDataTest';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, TrendingUp, TrendingDown, Target } from 'lucide-react';
 import Link from 'next/link';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { portfolioService } from '@/services/portfolioService';
@@ -46,17 +46,34 @@ export default function Home() {
         <DashboardSkeleton />
       ) : (
         <div className="space-y-6">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-              <p className="text-muted-foreground">
-                Your dividend investment overview and recommendations.
-              </p>
-            </div>
-          </div>
+          <PortfolioSummary />
           
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            <PortfolioSummary />
+            {/* Buys and Sells Card */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div className="space-y-1">
+                  <CardTitle>Buys and Sells</CardTitle>
+                  <CardDescription>Top investment opportunities</CardDescription>
+                </div>
+                <Target className="h-5 w-5 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-2">Technical Analysis Coming Soon</p>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p>• SMA-50 and SMA-200 calculations</p>
+                      <p>• Stochastics indicator implementation</p>
+                      <p>• Buy/sell range calculations</p>
+                      <p>• Position sizing rules</p>
+                      <p>• Technical analysis visualization</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
             <Link href="/portfolios" className="block">
               <DividendTimeline />
             </Link>
