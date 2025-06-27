@@ -147,8 +147,9 @@ describe('PortfolioSummary', () => {
 
     // Test Value tab content
     expect(screen.getByText('Total Value')).toBeInTheDocument();
-    const totalValue = screen.getByText(formatCurrency(valueMetrics.totalValue));
-    expect(totalValue).toBeInTheDocument();
+    const totalValueElements = screen.getAllByText(formatCurrency(valueMetrics.totalValue));
+    expect(totalValueElements.length).toBeGreaterThan(0);
+    expect(totalValueElements[0]).toBeInTheDocument();
 
     // Test Yield tab content
     const yieldTab = screen.getByRole('tab', { name: 'Yield' });

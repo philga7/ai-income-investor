@@ -16,6 +16,7 @@ import Link from 'next/link';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { portfolioService } from '@/services/portfolioService';
 import { Portfolio } from '@/services/portfolioService';
+import { DashboardSkeleton } from '@/components/dashboard/DashboardSkeleton';
 
 export default function Home() {
   const [portfolio, setPortfolio] = useState<Portfolio | null>(null);
@@ -41,46 +42,50 @@ export default function Home() {
 
   return (
     <ProtectedRoute>
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground">
-              Your dividend investment overview and recommendations.
-            </p>
+      {loading ? (
+        <DashboardSkeleton />
+      ) : (
+        <div className="space-y-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+              <p className="text-muted-foreground">
+                Your dividend investment overview and recommendations.
+              </p>
+            </div>
+          </div>
+          
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <PortfolioSummary />
+            <Link href="/portfolios" className="block">
+              <DividendTimeline />
+            </Link>
+            <Link href="/securities" className="block">
+              <MarketOverview />
+            </Link>
+          </div>
+          
+          <div className="grid gap-6 md:grid-cols-2">
+            <RecommendedStocks />
+            <DividendNews />
+          </div>
+
+          <div className="grid gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>API Test Components</CardTitle>
+                <CardDescription>
+                  Test components for Yahoo Finance API integration
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <PriceDataTest />
+                <HistoricalDataTest />
+              </CardContent>
+            </Card>
           </div>
         </div>
-        
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <PortfolioSummary />
-          <Link href="/portfolios" className="block">
-            <DividendTimeline />
-          </Link>
-          <Link href="/securities" className="block">
-            <MarketOverview />
-          </Link>
-        </div>
-        
-        <div className="grid gap-6 md:grid-cols-2">
-          <RecommendedStocks />
-          <DividendNews />
-        </div>
-
-        <div className="grid gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>API Test Components</CardTitle>
-              <CardDescription>
-                Test components for Yahoo Finance API integration
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <PriceDataTest />
-              <HistoricalDataTest />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      )}
     </ProtectedRoute>
   );
 }

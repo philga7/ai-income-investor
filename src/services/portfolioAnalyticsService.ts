@@ -128,18 +128,28 @@ export const portfolioAnalyticsService = {
     const securityValues: PortfolioValueMetrics['securityValues'] = {};
     let totalValue = 0;
     let totalCost = 0;
+    let totalGainLoss = 0;
 
     // Calculate individual security values and totals
     portfolio.securities.forEach((security) => {
-      const value = security.shares * security.security.price;
+      const isCash = security.security.ticker === 'CASH';
+      const price = isCash ? 1.00 : security.security.price;
+      const value = security.shares * price;
       const cost = security.shares * security.average_cost;
-      const gainLoss = value - cost;
-      const gainLossPercentage = cost > 0 ? (gainLoss / cost) * 100 : 0;
-      
-      // Calculate day change
-      const prevClose = security.security.prev_close || security.security.price;
-      const dayChange = security.security.price - prevClose;
-      const dayChangePercentage = prevClose > 0 ? (dayChange / prevClose) * 100 : 0;
+      let gainLoss = 0;
+      let gainLossPercentage = 0;
+      let dayChange = 0;
+      let dayChangePercentage = 0;
+
+      if (!isCash) {
+        gainLoss = value - cost;
+        gainLossPercentage = cost > 0 ? (gainLoss / cost) * 100 : 0;
+        const prevClose = security.security.prev_close || security.security.price;
+        dayChange = security.security.price - prevClose;
+        dayChangePercentage = prevClose > 0 ? (dayChange / prevClose) * 100 : 0;
+        totalGainLoss += gainLoss;
+      }
+      // For CASH, gain/loss and day change are always 0
 
       securityValues[security.security.id] = {
         value,
@@ -170,7 +180,6 @@ export const portfolioAnalyticsService = {
       totalCost += cost;
     });
 
-    const totalGainLoss = totalValue - totalCost;
     const totalGainLossPercentage = totalCost > 0 ? (totalGainLoss / totalCost) * 100 : 0;
 
     // Calculate weighted averages for portfolio metrics
