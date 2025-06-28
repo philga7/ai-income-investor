@@ -82,13 +82,7 @@ export const portfolioAnalyticsService = {
             weightedAverageEarningsGrowth: 0
           }
         },
-        dividendMetrics: {
-          totalAnnualDividend: 0,
-          totalMonthlyDividend: 0,
-          portfolioYield: 0,
-          weightedAverageYield: 0,
-          securityDividends: {}
-        }
+        dividendMetrics: dividendService.calculateDividendMetrics(portfolio)
       };
     }
 
@@ -144,9 +138,17 @@ export const portfolioAnalyticsService = {
       if (!isCash) {
         gainLoss = value - cost;
         gainLossPercentage = cost > 0 ? (gainLoss / cost) * 100 : 0;
-        const prevClose = security.security.prev_close || security.security.price;
-        dayChange = security.security.price - prevClose;
-        dayChangePercentage = prevClose > 0 ? (dayChange / prevClose) * 100 : 0;
+        const prevClose = security.security.prev_close;
+        if (prevClose === undefined || prevClose === null) {
+          dayChange = 0;
+          dayChangePercentage = 0;
+        } else if (prevClose === 0) {
+          dayChange = security.security.price;
+          dayChangePercentage = 0;
+        } else {
+          dayChange = security.security.price - prevClose;
+          dayChangePercentage = (dayChange / prevClose) * 100;
+        }
         totalGainLoss += gainLoss;
       }
       // For CASH, gain/loss and day change are always 0

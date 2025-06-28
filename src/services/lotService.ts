@@ -40,7 +40,12 @@ export const lotService = {
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      let error;
+      try {
+        error = await response.json();
+      } catch (e) {
+        throw new Error('Failed to fetch lots');
+      }
       throw new Error(error.error || 'Failed to fetch lots');
     }
 
