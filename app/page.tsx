@@ -8,8 +8,6 @@ import { RecommendedStocks } from '@/components/dashboard/recommended-stocks';
 import { MarketOverview } from '@/components/dashboard/market-overview';
 import { DividendNews } from '@/components/dashboard/dividend-news';
 import { BuysAndSells } from '@/components/dashboard/buys-and-sells';
-import { PriceDataTest } from '@/components/PriceDataTest';
-import { HistoricalDataTest } from '@/components/HistoricalDataTest';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, TrendingUp, TrendingDown, Target } from 'lucide-react';
@@ -67,18 +65,7 @@ export default function Home() {
           </div>
 
           <div className="grid gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>API Test Components</CardTitle>
-                <CardDescription>
-                  Test components for Yahoo Finance API integration
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <PriceDataTest />
-                <HistoricalDataTest />
-              </CardContent>
-            </Card>
+            {/* Removed API Test Components Card as it referenced deleted test components */}
           </div>
         </div>
       )}
