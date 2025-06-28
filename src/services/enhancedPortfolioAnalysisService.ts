@@ -469,25 +469,23 @@ ${analysis.dividendTiming.exDividendCalendar.slice(0, 10).map(event =>
       timeframe: 'immediate' | 'short-term' | 'long-term';
     }> = [];
 
-    // Simple pattern matching - in production, you might use more sophisticated NLP
+    // Improved pattern matching: match lines like 'BUY AAPL - ...', 'SELL XYZ - ...', etc.
+    const regex = new RegExp(`^\\s*${type}\\s+([A-Z]{1,5})\\b`, 'i');
     const lines = response.split('\n');
     for (const line of lines) {
-      const lowerLine = line.toLowerCase();
-      if (lowerLine.includes(type) && (lowerLine.includes('ticker') || lowerLine.includes('stock') || lowerLine.includes('security'))) {
-        const tickerMatch = line.match(/\b[A-Z]{1,5}\b/);
-        const ticker = tickerMatch ? tickerMatch[0] : undefined;
-        
+      const match = line.match(regex);
+      if (match) {
+        const ticker = match[1];
+        const lowerLine = line.toLowerCase();
         // Extract timeframe
         let timeframe: 'immediate' | 'short-term' | 'long-term' = 'short-term';
         if (lowerLine.includes('immediate') || lowerLine.includes('now')) timeframe = 'immediate';
         else if (lowerLine.includes('long-term') || lowerLine.includes('long term')) timeframe = 'long-term';
-
         // Estimate confidence based on language
         let confidence = 0.7; // default
         if (lowerLine.includes('strong') || lowerLine.includes('high')) confidence = 0.9;
         else if (lowerLine.includes('moderate') || lowerLine.includes('medium')) confidence = 0.7;
         else if (lowerLine.includes('weak') || lowerLine.includes('low')) confidence = 0.5;
-
         recommendations.push({
           ticker,
           reason: line.trim(),
@@ -496,7 +494,6 @@ ${analysis.dividendTiming.exDividendCalendar.slice(0, 10).map(event =>
         });
       }
     }
-
     return recommendations;
   },
 

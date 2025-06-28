@@ -46,7 +46,7 @@ export const YAHOO_FINANCE_CONFIG = {
     serverError: 'Server error occurred. Please try again later.',
     invalidCrumb: 'Yahoo Finance API authentication error. Please try again in a moment.',
   },
-} as const;
+};
 
 export type YahooFinanceModule =
   | 'assetProfile'
