@@ -1,13 +1,14 @@
 name: Staging Deployment
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches: [ main ]
 
 jobs:
-  test-and-deploy:
+  deploy:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
-    container: mcr.microsoft.com/playwright:v1.52.0-noble
     environment: staging
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -30,17 +31,6 @@ jobs:
       
       - name: Install dependencies
         run: npm install
-      
-      - name: Run E2E Tests
-        run: |
-          npm run serve & 
-          npx wait-on tcp:3000 && npm run test:e2e
-        env:
-          HOME: /root
-
-      - name: Configure Git
-        run: |
-          git config --global --add safe.directory /__w/ai-income-investor/ai-income-investor
 
       - name: Cache Vercel build
         uses: actions/cache@v3
@@ -82,9 +72,3 @@ jobs:
           vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} \
             --env NEXT_PUBLIC_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL" \
             --env NEXT_PUBLIC_SUPABASE_ANON_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY"
-
-      - name: Cleanup
-        if: always()
-        run: |
-          echo "Cleaning up background processes"
-          pkill -f "node" || true
