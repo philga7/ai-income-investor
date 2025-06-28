@@ -1,4 +1,14 @@
-import { yahooFinanceClient } from './client';
+import { yahooFinanceClient } from '@/lib/financial/api/yahoo/client';
+import { YAHOO_FINANCE_CONFIG } from '@/lib/financial/api/yahoo/config';
+
+beforeAll(() => {
+  YAHOO_FINANCE_CONFIG.maxRetries = 3;
+  YAHOO_FINANCE_CONFIG.retry = {
+    invalidCrumbRetries: 3,
+    invalidCrumbDelay: 1, // 1ms delay
+    exponentialBackoff: false,
+  };
+});
 
 // Mock yahoo-finance2
 jest.mock('yahoo-finance2', () => ({

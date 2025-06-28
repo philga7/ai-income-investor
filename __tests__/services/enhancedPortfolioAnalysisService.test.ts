@@ -1,7 +1,7 @@
-import { enhancedPortfolioAnalysisService } from './enhancedPortfolioAnalysisService';
+import { enhancedPortfolioAnalysisService } from '@/src/services/enhancedPortfolioAnalysisService';
 
 // Mock the dividend service
-jest.mock('./dividendService', () => ({
+jest.mock('@/src/services/dividendService', () => ({
   dividendService: {
     getUpcomingDividends: jest.fn().mockResolvedValue([
       {
@@ -26,7 +26,7 @@ jest.mock('./dividendService', () => ({
 }));
 
 // Mock the portfolio analytics service
-jest.mock('./portfolioAnalyticsService', () => ({
+jest.mock('@/src/services/portfolioAnalyticsService', () => ({
   portfolioAnalyticsService: {
     calculatePortfolioAnalytics: jest.fn().mockReturnValue({
       valueMetrics: {

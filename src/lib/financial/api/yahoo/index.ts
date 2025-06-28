@@ -1,4 +1,19 @@
-import { financialService } from '@/src/services/financialService';
+import { yahooFinanceClient } from './client';
+import { YAHOO_FINANCE_CONFIG } from './config';
+import type { 
+  QuoteSummary, 
+  YahooFinanceError, 
+  BalanceSheetStatement, 
+  CashflowStatement, 
+  Earnings, 
+  Price, 
+  SummaryDetail, 
+  FinancialData, 
+  AssetProfile, 
+  SearchResult, 
+  YahooFinanceSearchResult, 
+  YahooFinanceSearchQuote 
+} from './types';
 
 export interface HistoricalQuote {
   date: Date;
@@ -10,6 +25,29 @@ export interface HistoricalQuote {
   adjClose?: number;
 }
 
+// Export the main client
+export { yahooFinanceClient };
+
+// Export configuration
+export { YAHOO_FINANCE_CONFIG };
+
+// Export all types
+export type {
+  QuoteSummary,
+  YahooFinanceError,
+  BalanceSheetStatement,
+  CashflowStatement,
+  Earnings,
+  Price,
+  SummaryDetail,
+  FinancialData,
+  AssetProfile,
+  SearchResult,
+  YahooFinanceSearchResult,
+  YahooFinanceSearchQuote
+};
+
+// Legacy API for backward compatibility
 export const yahooFinanceApi = {
   async historical(symbol: string, options: { period1: Date; period2: Date; interval: '1d' | '1wk' | '1mo' }) {
     try {

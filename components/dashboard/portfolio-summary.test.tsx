@@ -1,13 +1,12 @@
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PortfolioSummary } from '@/components/dashboard/portfolio-summary';
-// import { mockSupabaseClient } from '../../lib/mock-supabase';
 import { portfolioAnalyticsService } from '@/services/portfolioAnalyticsService';
 import { dividendService } from '@/services/dividendService';
 import { Security, Portfolio } from '@/services/portfolioService';
 
 jest.mock('@/lib/supabase', () => ({
-  supabase: require('../../lib/mock-supabase').mockSupabaseClient,
+  supabase: require('@/__tests__/lib/mock-supabase').mockSupabaseClient,
 }));
 
 const createMockSecurity = (overrides: Partial<Security>): Security => ({
@@ -107,7 +106,7 @@ const transformedPortfolio: Portfolio = {
 
 describe('PortfolioSummary', () => {
   beforeEach(() => {
-    const { mockSupabaseClient } = require('../../lib/mock-supabase');
+    const { mockSupabaseClient } = require('@/__tests__/lib/mock-supabase');
     mockSupabaseClient.from.mockReturnValue({
       select: jest.fn().mockReturnValue({
         order: jest.fn().mockResolvedValue({
@@ -177,7 +176,7 @@ describe('PortfolioSummary', () => {
   });
 
   it('displays "No portfolios found" message when there are no portfolios', async () => {
-    const { mockSupabaseClient } = require('../../lib/mock-supabase');
+    const { mockSupabaseClient } = require('@/__tests__/lib/mock-supabase');
     mockSupabaseClient.from.mockReturnValue({
         select: jest.fn().mockReturnValue({
           order: jest.fn().mockResolvedValue({
