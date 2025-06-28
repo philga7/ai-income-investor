@@ -2,23 +2,11 @@ const { TextEncoder, TextDecoder } = require('util');
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 
-// Mock fetch to always return a dummy successful response, with an array for /securities endpoints
-global.fetch = jest.fn((url) => {
-  if (typeof url === 'string' && url.includes('/securities')) {
-    return Promise.resolve({
-      ok: true,
-      status: 200,
-      json: () => Promise.resolve([]),
-      text: () => Promise.resolve(''),
-    });
-  }
-  return Promise.resolve({
-    ok: true,
-    status: 200,
-    json: () => Promise.resolve({}),
-    text: () => Promise.resolve(''),
-  });
-});
+// Polyfill fetch for Node.js as a Jest mock that delegates to node-fetch
+const realFetch = require('node-fetch');
+if (typeof global.fetch === 'undefined' || !global.fetch._isMockFunction) {
+  global.fetch = jest.fn((...args) => realFetch(...args));
+}
 
 // Only keep if you're actually using fetch in tests
 const { Response, Request, Headers } = require('node-fetch');
