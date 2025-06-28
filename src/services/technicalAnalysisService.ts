@@ -430,7 +430,7 @@ class TechnicalAnalysisService {
       
       // Convert to our format
       const data: HistoricalDataPoint[] = historicalData.map(quote => ({
-        date: quote.date.toISOString(),
+        date: typeof quote.date === 'string' ? quote.date : quote.date.toISOString(),
         open: quote.open,
         high: quote.high,
         low: quote.low,
