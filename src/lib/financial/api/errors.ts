@@ -60,24 +60,25 @@ export function handleYahooFinanceError(error: unknown): never {
   }
 
   const errorMessage = error instanceof Error ? error.message : String(error);
+  const errorMessageLower = errorMessage.toLowerCase();
 
   // Check for rate limiting
-  if (errorMessage.includes('rate limit') || errorMessage.includes('too many requests')) {
+  if (errorMessageLower.includes('rate limit') || errorMessageLower.includes('too many requests')) {
     throw new RateLimitError(undefined, error);
   }
 
   // Check for invalid symbol
-  if (errorMessage.includes('invalid symbol') || errorMessage.includes('not found')) {
+  if (errorMessageLower.includes('invalid symbol') || errorMessageLower.includes('not found')) {
     throw new InvalidSymbolError(errorMessage, error);
   }
 
   // Check for network errors
-  if (errorMessage.includes('network') || errorMessage.includes('connection')) {
+  if (errorMessageLower.includes('network') || errorMessageLower.includes('connection')) {
     throw new NetworkError(undefined, error);
   }
 
   // Check for timeout
-  if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+  if (errorMessageLower.includes('timeout') || errorMessageLower.includes('timed out')) {
     throw new TimeoutError(undefined, error);
   }
 

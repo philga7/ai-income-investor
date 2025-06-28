@@ -57,7 +57,7 @@ export function LotEntryForm({ lots, onChange, onTotalsChange }: LotEntryFormPro
       return sum + (quantity * price);
     }, 0);
 
-    const averageCost = totalShares > 0 ? totalCost / totalShares : 0;
+    const averageCost = totalShares !== 0 ? totalCost / totalShares : 0;
 
     return {
       totalShares,
