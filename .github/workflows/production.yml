@@ -67,7 +67,7 @@ jobs:
 
       - name: Build Project Artifacts
         run: |
-          vercel build --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+          vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy to Vercel
         run: |
