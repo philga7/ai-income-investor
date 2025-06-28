@@ -77,9 +77,6 @@ export default function SecuritiesPage() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Securities</h1>
-            <p className="text-muted-foreground">
-              Browse and analyze dividend stocks.
-            </p>
           </div>
           
           <div className="w-full md:w-auto flex gap-2">
@@ -203,33 +200,63 @@ export default function SecuritiesPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {securities.map((security) => (
-                <TableRow key={security.ticker}>
-                  <TableCell className="font-medium">
-                    <Link href={`/securities/${security.ticker}`} className="hover:underline">
-                      {security.ticker}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{security.name}</TableCell>
-                  <TableCell>{security.sector}</TableCell>
-                  <TableCell className="text-right">${security.price.toFixed(2)}</TableCell>
-                  <TableCell className="text-right">{security.yield.toFixed(2)}%</TableCell>
-                  <TableCell className="text-right">
-                    <Badge variant={security.sma200 === "above" ? "default" : "secondary"}>
-                      {security.sma200 === "above" ? "Above" : "Below"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="hidden xl:table-cell">
-                    <div className="flex flex-wrap gap-1">
-                      {security.tags.slice(0, 2).map((tag, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
-                          {tag}
+              {(() => {
+                // Group securities by SMA-200 status and sort within groups
+                const belowSma200 = securities.filter(s => s.sma200 === 'below').sort((a, b) => a.ticker.localeCompare(b.ticker));
+                const aboveSma200 = securities.filter(s => s.sma200 === 'above').sort((a, b) => a.ticker.localeCompare(b.ticker));
+                const noSma200 = securities.filter(s => s.sma200 !== 'above' && s.sma200 !== 'below').sort((a, b) => a.ticker.localeCompare(b.ticker));
+                
+                // Combine in desired order: below, above, no data
+                const orderedSecurities = [...belowSma200, ...aboveSma200, ...noSma200];
+                
+                return orderedSecurities.map((security) => (
+                  <TableRow key={security.ticker} className="cursor-pointer hover:bg-muted/50">
+                    <TableCell className="font-medium">
+                      <Link href={`/securities/${security.ticker}`} className="hover:underline block">
+                        {security.ticker}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Link href={`/securities/${security.ticker}`} className="block">
+                        {security.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <Link href={`/securities/${security.ticker}`} className="block">
+                        {security.sector}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Link href={`/securities/${security.ticker}`} className="block">
+                        ${security.price.toFixed(2)}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Link href={`/securities/${security.ticker}`} className="block">
+                        {security.yield.toFixed(2)}%
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Link href={`/securities/${security.ticker}`} className="block">
+                        <Badge variant={security.sma200 === "above" ? "default" : "secondary"}>
+                          {security.sma200 === "above" ? "Above" : security.sma200 === "below" ? "Below" : "N/A"}
                         </Badge>
-                      ))}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="hidden xl:table-cell">
+                      <Link href={`/securities/${security.ticker}`} className="block">
+                        <div className="flex flex-wrap gap-1">
+                          {security.tags.slice(0, 2).map((tag, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ));
+              })()}
             </TableBody>
           </Table>
         </div>
