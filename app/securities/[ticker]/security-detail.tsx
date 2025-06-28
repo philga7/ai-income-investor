@@ -20,6 +20,7 @@ import { SecurityChart } from "@/components/securities/security-chart";
 import { TechnicalIndicators } from "@/components/securities/technical-indicators";
 import { DividendHistory } from "@/components/securities/dividend-history";
 import { AnalystRecommendations } from "@/components/securities/analyst-recommendations";
+import { SecurityDetailSkeleton } from "@/components/portfolios/SecurityDetailSkeleton";
 import { useState, useEffect } from "react";
 import { dividendService } from "@/services/dividendService";
 import { supabase } from "@/lib/supabase";
@@ -54,7 +55,8 @@ interface Security {
   beta: number;
   fiftyDayAverage: number;
   twoHundredDayAverage: number;
-  exDividendDate: string;
+  exDividendDate: number;
+  calendarExDividendDate?: number;
   operating_cash_flow: number;
   free_cash_flow: number;
   cash_flow_growth: number;
@@ -362,6 +364,7 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
           fiftyDayAverage: dbSecurityData.fifty_day_average,
           twoHundredDayAverage: dbSecurityData.two_hundred_day_average,
           exDividendDate: dbSecurityData.ex_dividend_date,
+          calendarExDividendDate: dbSecurityData.calendarExDividendDate,
           operating_cash_flow: dbSecurityData.operating_cash_flow,
           free_cash_flow: dbSecurityData.free_cash_flow,
           cash_flow_growth: dbSecurityData.cash_flow_growth,
@@ -450,7 +453,7 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
   }, [ticker]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <SecurityDetailSkeleton />;
   }
 
   if (!security) {
@@ -701,7 +704,19 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
                   <div className="flex justify-between">
                     <dt className="text-sm text-muted-foreground">Ex-Dividend Date</dt>
                     <dd className="text-sm font-medium">
-                      {security.exDividendDate ? new Date(security.exDividendDate).toLocaleDateString() : 'N/A'}
+                      {(() => {
+                        const ms = security.exDividendDate;
+                        const sec = security.calendarExDividendDate;
+                        if (ms && typeof ms === 'number' && ms > 0) {
+                          const d = new Date(ms);
+                          if (!isNaN(d.getTime())) return d.toLocaleDateString();
+                        }
+                        if (sec && typeof sec === 'number' && sec > 0) {
+                          const d = new Date(sec * 1000);
+                          if (!isNaN(d.getTime())) return d.toLocaleDateString();
+                        }
+                        return 'N/A';
+                      })()}
                     </dd>
                   </div>
                 </dl>
@@ -810,22 +825,22 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
       </Tabs>
 
       {/* Earnings Section */}
-      <div className="bg-white shadow rounded-lg p-6">
+      <div className="bg-card shadow rounded-lg p-6">
         <h2 className="text-xl font-semibold mb-4">Earnings</h2>
         
         {/* Next Earnings */}
         <div className="mb-6">
           <h3 className="text-lg font-medium mb-3">Next Earnings</h3>
-          <div className="bg-gray-50 p-4 rounded-lg">
+          <div className="bg-muted p-4 rounded-lg">
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                   {security.earnings?.earningsChart?.currentQuarterEstimateDate} {security.earnings?.earningsChart?.currentQuarterEstimateYear}
                 </p>
-                <p className="text-sm text-gray-500">Estimate: ${security.earnings?.earningsChart?.currentQuarterEstimate.toFixed(2)}</p>
+                <p className="text-sm text-muted-foreground">Estimate: ${security.earnings?.earningsChart?.currentQuarterEstimate.toFixed(2)}</p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-gray-500">Range</p>
+                <p className="text-sm text-muted-foreground">Range</p>
                 <p className="font-medium">
                   ${security.earnings?.earningsLow.toFixed(2)} - ${security.earnings?.earningsHigh.toFixed(2)}
                 </p>
@@ -842,14 +857,24 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
               {security.earnings?.financialsChart?.quarterly.slice(0, 4).map((quarter: { date: number; revenue: number; earnings: number }, index: number) => (
                 <div key={index} className="border-b pb-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">
-                      {new Date(quarter.date).toLocaleDateString()}
+                    <span className="text-muted-foreground">
+                      {(() => {
+                        const d = quarter.date;
+                        if (!d || d === 0) return 'N/A';
+                        if (typeof d === 'string' && /^\d{4}$/.test(d)) return d; // string year
+                        if (typeof d === 'number' && d >= 1900 && d <= 2100) return d; // number year
+                        if (typeof d === 'number') {
+                          const date = d.toString().length === 10 ? new Date(d * 1000) : new Date(d);
+                          if (!isNaN(date.getTime())) return date.toLocaleDateString();
+                        }
+                        return 'N/A';
+                      })()}
                     </span>
                     <span className="font-medium">
                       ${quarter.earnings.toFixed(2)}
                     </span>
                   </div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-muted-foreground">
                     Revenue: ${quarter.revenue.toFixed(2)}
                   </div>
                 </div>
@@ -864,14 +889,24 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
               {security.earnings?.financialsChart?.yearly.slice(0, 4).map((year: { date: number; revenue: number; earnings: number }, index: number) => (
                 <div key={index} className="border-b pb-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600">
-                      {new Date(year.date).getFullYear()}
+                    <span className="text-muted-foreground">
+                      {(() => {
+                        const d = year.date;
+                        if (!d || d === 0) return 'N/A';
+                        if (typeof d === 'string' && /^\d{4}$/.test(d)) return d; // string year
+                        if (typeof d === 'number' && d >= 1900 && d <= 2100) return d; // number year
+                        if (typeof d === 'number') {
+                          const date = d.toString().length === 10 ? new Date(d * 1000) : new Date(d);
+                          if (!isNaN(date.getTime())) return date.getFullYear();
+                        }
+                        return 'N/A';
+                      })()}
                     </span>
                     <span className="font-medium">
                       ${year.earnings.toFixed(2)}
                     </span>
                   </div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-muted-foreground">
                     Revenue: ${year.revenue.toFixed(2)}
                   </div>
                 </div>
@@ -887,14 +922,24 @@ export function SecurityDetailClient({ ticker }: SecurityDetailClientProps) {
             {security.earnings?.earningsChart?.quarterly.slice(0, 4).map((earning: { date: number; actual: number; estimate: number }, index: number) => (
               <div key={index} className="border-b pb-2">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">
-                    {new Date(earning.date).toLocaleDateString()}
+                  <span className="text-muted-foreground">
+                    {(() => {
+                      const d = earning.date;
+                      if (!d || d === 0) return 'N/A';
+                      if (typeof d === 'string' && /^\d{4}$/.test(d)) return d; // string year
+                      if (typeof d === 'number' && d >= 1900 && d <= 2100) return d; // number year
+                      if (typeof d === 'number') {
+                        const date = d.toString().length === 10 ? new Date(d * 1000) : new Date(d);
+                        if (!isNaN(date.getTime())) return date.toLocaleDateString();
+                      }
+                      return 'N/A';
+                    })()}
                   </span>
                   <span className={`font-medium ${earning.actual >= earning.estimate ? 'text-green-600' : 'text-red-600'}`}>
                     ${earning.actual.toFixed(2)}
                   </span>
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-muted-foreground">
                   Estimate: ${earning.estimate.toFixed(2)}
                 </div>
               </div>
