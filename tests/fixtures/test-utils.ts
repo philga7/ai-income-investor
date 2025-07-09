@@ -15,14 +15,34 @@ const requiredEnvVars = {
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
 };
 
+// Debug: Log all environment variables for troubleshooting
+console.log('=== Environment Variable Debug ===');
+console.log('All SUPABASE env vars:', Object.keys(process.env).filter(key => key.includes('SUPABASE')));
+console.log('Required env vars status:', Object.entries(requiredEnvVars).map(([key, value]) => ({
+  key,
+  exists: !!value,
+  length: value?.length || 0,
+  value: value ? `${value.substring(0, 10)}...` : 'undefined'
+})));
+
 // Check for missing environment variables
 const missingVars = Object.entries(requiredEnvVars)
-  .filter(([key, value]) => !value)
+  .filter(([key, value]) => !value || value.trim() === '')
   .map(([key]) => key);
 
 if (missingVars.length > 0) {
   console.error('Missing required environment variables:', missingVars);
   console.error('Available environment variables:', Object.keys(process.env).filter(key => key.includes('SUPABASE')));
+  console.error('Environment variable values (lengths):', Object.entries(requiredEnvVars).map(([key, value]) => `${key}: "${value}" (length: ${value?.length || 0})`));
+  
+  // In CI, provide more helpful error message
+  if (process.env.CI) {
+    console.error('This appears to be a CI environment. Please ensure the following secrets are set in your GitHub repository:');
+    console.error('- NEXT_PUBLIC_SUPABASE_URL');
+    console.error('- NEXT_PUBLIC_SUPABASE_ANON_KEY');
+    console.error('- SUPABASE_SERVICE_ROLE_KEY');
+  }
+  
   throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
 }
 

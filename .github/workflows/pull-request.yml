@@ -42,6 +42,18 @@ jobs:
         run: |
           git config --global --add safe.directory /__w/ai-income-investor/ai-income-investor
 
+      - name: Debug Environment Variables
+        run: |
+          echo "Checking environment variables..."
+          echo "NEXT_PUBLIC_SUPABASE_URL exists: $([ -n "$NEXT_PUBLIC_SUPABASE_URL" ] && echo 'YES' || echo 'NO')"
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY exists: $([ -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ] && echo 'YES' || echo 'NO')"
+          echo "SUPABASE_SERVICE_ROLE_KEY exists: $([ -n "$SUPABASE_SERVICE_ROLE_KEY" ] && echo 'YES' || echo 'NO')"
+          echo "All SUPABASE env vars: $(env | grep SUPABASE | cut -d'=' -f1 | tr '\n' ' ')"
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
       - name: Run E2E Tests
         run: |
           npm run serve & 
