@@ -1,6 +1,30 @@
+import * as path from 'path';
+import * as dotenv from 'dotenv';
+
+// Load environment variables from .env.local if it exists
+dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
+
 import { test as base } from '@playwright/test';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
+
+// Validate required environment variables
+const requiredEnvVars = {
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+};
+
+// Check for missing environment variables
+const missingVars = Object.entries(requiredEnvVars)
+  .filter(([key, value]) => !value)
+  .map(([key]) => key);
+
+if (missingVars.length > 0) {
+  console.error('Missing required environment variables:', missingVars);
+  console.error('Available environment variables:', Object.keys(process.env).filter(key => key.includes('SUPABASE')));
+  throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+}
 
 // Declare custom fixture types
 type CustomFixtures = {
