@@ -24,4 +24,20 @@ test.describe('Authentication', () => {
     // Verify the login form is present
     await expect(page.getByRole('heading', { name: /Welcome back/i })).toBeVisible();
   });
+
+  // Example of how to use the testUser fixture when needed
+  test('should allow user to log in with valid credentials', async ({ page, testUser }) => {
+    await page.goto('/auth/sign-in');
+    
+    // Fill in the login form
+    await page.getByTestId('signin-email').fill(testUser.email);
+    await page.getByTestId('signin-password').fill(testUser.password);
+    await page.getByTestId('signin-submit').click();
+    
+    // Wait for successful login
+    await page.waitForURL((url: URL) => url.pathname === '/' || url.pathname === '/dashboard');
+    
+    // Verify user is logged in
+    await expect(page.getByTestId('user-menu-trigger')).toBeVisible();
+  });
 });

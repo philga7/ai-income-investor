@@ -73,6 +73,7 @@ export function SignInForm() {
                 <Input
                   type="email"
                   placeholder="Enter your email"
+                  data-testid="signin-email"
                   {...field}
                   disabled={isLoading}
                 />
@@ -92,6 +93,7 @@ export function SignInForm() {
                   <Input
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Enter your password"
+                    data-testid="signin-password"
                     {...field}
                     disabled={isLoading}
                   />
@@ -115,7 +117,7 @@ export function SignInForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button type="submit" className="w-full" disabled={isLoading} data-testid="signin-submit">
           {isLoading ? 'Signing in...' : 'Sign in'}
         </Button>
       </form>
