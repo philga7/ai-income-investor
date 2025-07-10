@@ -29,8 +29,10 @@ This project uses a tiered testing approach to balance speed and coverage across
 
 - `tests/e2e/cp-smoke.spec.ts` - Critical path tests for CI
 - `tests/e2e/smoke.spec.ts` - Comprehensive smoke tests
-- `playwright.config.ts` - Fast configuration (Chromium only)
-- `playwright.full-smoke.config.ts` - Full configuration (both browsers, excludes critical path smoke tests)
+- `playwright.config.ts` - Local development configuration (Chromium only)
+- `playwright.ci.config.ts` - CI configuration for critical path tests (single worker, longer timeouts)
+- `playwright.full-smoke.config.ts` - Local development full configuration (both browsers, excludes critical path smoke tests)
+- `playwright.full-smoke.ci.config.ts` - CI configuration for full smoke tests (single worker, longer timeouts)
 
 ## Test Exclusion Strategy
 
@@ -61,14 +63,37 @@ This project uses a tiered testing approach to balance speed and coverage across
 3. **Parallel Execution**: Tests run in parallel in both CI and local environments
 4. **Caching**: Node modules and build artifacts are cached
 
+## CI vs Local Configuration
+
+### Local Development
+- **Parallel execution**: Multiple workers for faster testing
+- **Shorter timeouts**: Optimized for fast feedback
+- **Single browser**: Chromium only for speed
+
+### CI Environment
+- **Single worker**: Prevents resource contention
+- **Longer timeouts**: Accommodates slower CI environment
+- **Cross-browser**: Both Chromium and WebKit for full smoke tests
+- **Stable execution**: Prioritizes reliability over speed
+
+### Configuration Files
+- **Local**: `playwright.config.ts`, `playwright.full-smoke.config.ts`
+- **CI**: `playwright.ci.config.ts`, `playwright.full-smoke.ci.config.ts`
+
 ## Running Tests Locally
 
 ```bash
 # Critical path smoke tests (for quick feedback)
 npm run test:e2e:cp-smoke
 
+# Critical path smoke tests (CI configuration)
+npm run test:e2e:cp-smoke:ci
+
 # Full smoke tests (for thorough testing)
 npm run test:e2e:full-smoke
+
+# Full smoke tests (CI configuration)
+npm run test:e2e:full-smoke:ci
 
 # Full test suite (for development)
 npm run test:e2e

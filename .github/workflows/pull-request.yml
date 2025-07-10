@@ -45,7 +45,7 @@ jobs:
       - name: Run E2E Tests
         run: |
           npm run serve & 
-          npx wait-on tcp:3000 && npm run test:e2e:cp-smoke
+          npx wait-on tcp:3000 && npm run test:e2e:cp-smoke:ci
         env:
           HOME: /root
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}

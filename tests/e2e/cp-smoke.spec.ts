@@ -8,10 +8,12 @@ async function login(page: Page, email: string, password: string) {
   await page.getByTestId('signin-password').fill(password);
   await page.getByTestId('signin-submit').click();
   
-  // Wait for navigation to complete
-  await page.waitForURL((url: URL) => url.pathname === '/' || url.pathname === '/dashboard');
+  // Wait for navigation to complete with more resilient strategy
+  await page.waitForURL((url: URL) => url.pathname === '/' || url.pathname === '/dashboard', { timeout: 30000 });
   await page.waitForLoadState('domcontentloaded');
-  await page.waitForTimeout(1000);
+  
+  // Wait for authentication state to be established
+  await page.waitForTimeout(2000);
 }
 
 test.describe('Critical Path Smoke Test', () => {

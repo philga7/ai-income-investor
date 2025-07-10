@@ -23,7 +23,9 @@
     "test:e2e:smoke:headed": "npx playwright test tests/e2e/smoke.spec.ts --headed",
     "test:e2e:cp-smoke": "npx playwright test tests/e2e/cp-smoke.spec.ts",
     "test:e2e:cp-smoke:headed": "npx playwright test tests/e2e/cp-smoke.spec.ts --headed",
+    "test:e2e:cp-smoke:ci": "npx playwright test tests/e2e/cp-smoke.spec.ts --config=playwright.ci.config.ts",
     "test:e2e:full-smoke": "npx playwright test --config=playwright.full-smoke.config.ts",
+    "test:e2e:full-smoke:ci": "npx playwright test --config=playwright.full-smoke.ci.config.ts",
     "verify:indexes": "ts-node scripts/verify-indexes.ts"
   },
   "dependencies": {

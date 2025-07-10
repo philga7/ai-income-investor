@@ -8,8 +8,8 @@ async function login(page: Page, email: string, password: string) {
   await page.getByTestId('signin-password').fill(password);
   await page.getByTestId('signin-submit').click();
   
-  // Wait for navigation to complete
-  await page.waitForURL((url: URL) => url.pathname === '/' || url.pathname === '/dashboard');
+  // Wait for navigation to complete with more resilient strategy
+  await page.waitForURL((url: URL) => url.pathname === '/' || url.pathname === '/dashboard', { timeout: 30000 });
   
   // Wait for the page to be fully loaded (use domcontentloaded instead of networkidle)
   await page.waitForLoadState('domcontentloaded');
