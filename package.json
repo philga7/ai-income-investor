@@ -21,6 +21,9 @@
     "test:e2e:debug:full": "npm run build && npm run serve:e2e & npx wait-on tcp:3000 && npm run test:e2e:debug",
     "test:e2e:smoke": "npx playwright test tests/e2e/smoke.spec.ts",
     "test:e2e:smoke:headed": "npx playwright test tests/e2e/smoke.spec.ts --headed",
+    "test:e2e:cp-smoke": "npx playwright test tests/e2e/cp-smoke.spec.ts",
+    "test:e2e:cp-smoke:headed": "npx playwright test tests/e2e/cp-smoke.spec.ts --headed",
+    "test:e2e:full-smoke": "npx playwright test --config=playwright.full-smoke.config.ts",
     "verify:indexes": "ts-node scripts/verify-indexes.ts"
   },
   "dependencies": {

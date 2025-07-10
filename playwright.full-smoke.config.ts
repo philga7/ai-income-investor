@@ -17,13 +17,13 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
       testMatch: /.*\.spec\.ts/,
+      testIgnore: /.*cp-smoke\.spec\.ts/, // Exclude critical path smoke tests from full smoke runs
     },
-    // WebKit project removed for faster CI runs
-    // Uncomment for comprehensive testing in staging/production
-    // {
-    //   name: 'webkit',
-    //   use: { ...devices['Desktop Safari'] },
-    //   testMatch: /.*\.spec\.ts/,
-    // },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+      testMatch: /.*\.spec\.ts/,
+      testIgnore: /.*cp-smoke\.spec\.ts/, // Exclude critical path smoke tests from full smoke runs
+    },
   ],
 }); 

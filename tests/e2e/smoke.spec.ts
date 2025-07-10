@@ -1,7 +1,3 @@
-import * as path from 'path';
-import * as dotenv from 'dotenv';
-dotenv.config({ path: path.resolve(__dirname, '../../.env.local') });
-
 import { test, expect } from '../fixtures/test-utils';
 import { Page } from '@playwright/test';
 
@@ -83,7 +79,7 @@ test.describe('Smoke Test', () => {
       const hasLoadingState = await page.locator('text=Loading').isVisible();
       
       if (!hasEmptyState && !hasLoadingState) {
-        console.log('Portfolio summary loaded but no tabs or empty state found');
+        // Portfolio summary loaded but no tabs or empty state found
       }
     }
 
@@ -185,7 +181,7 @@ test.describe('Smoke Test', () => {
       
       if (!hasEmptyState && !hasLoadingState) {
         // If neither empty state nor loading state, the page should still be functional
-        console.log('Securities page loaded but no table or empty state found');
+        // Securities page loaded but no table or empty state found
       }
     }
 

@@ -9,10 +9,12 @@ jobs:
   deploy:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.52.0-noble
     environment: staging
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
     steps:
       - uses: actions/checkout@v4
       
@@ -31,6 +33,12 @@ jobs:
       
       - name: Install dependencies
         run: npm install
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run Unit Tests
+        run: npm run test:unit
 
       - name: Cache Vercel build
         uses: actions/cache@v3
@@ -72,3 +80,23 @@ jobs:
           vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} \
             --env NEXT_PUBLIC_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL" \
             --env NEXT_PUBLIC_SUPABASE_ANON_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY"
+
+      - name: Configure Git
+        run: |
+          git config --global --add safe.directory /__w/ai-income-investor/ai-income-investor
+
+      - name: Run E2E Tests
+        run: |
+          npm run serve & 
+          npx wait-on tcp:3000 && npm run test:e2e:full-smoke
+        env:
+          HOME: /root
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "Cleaning up background processes"
+          pkill -f "node" || true
