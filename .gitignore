@@ -22,6 +22,7 @@ node_modules/
 *.sln
 *.sw?
 .cursor/
+.cursorrules
 
 # OS specific
 .DS_Store
